@@ -1,0 +1,92 @@
+# This is the hardware configuration file for the ESP32-S3-DevKitC-1 board with a 4.3" capacitive touch display from Waveshare.
+# It sets up the necessary hardware components, including getting a stable display, I2C communication, touchscreen, and wifi
+# TODO: set a backlight timer to dim the screen using LVGL layer. 
+
+esphome:
+  platformio_options:
+    build_flags: 
+      - "-DBOARD_HAS_PSRAM"
+      # build flags below added to help with screen tearing with wifi, in the order i added them
+      # Boosts internal DMA burst sizes to reduce bus contention
+      - "-DCONFIG_LCD_RGB_RECONSTRUCT_FROM_SRAM=1" 
+      # Increase GDMA burst size for the LCD peripheral
+      - "-DCONFIG_LCD_RGB_DMA_BURST_SIZE=64"
+      # Ensure Wi-Fi task runs strictly on Core 1, leaving Core 0 more available for system/DMA routing
+      - "-DCONFIG_ESP_WIFI_TASK_CORE_ID=1"
+      # use less agressive task scheduling to reduce the priority of wifi background processing
+      - "-DCONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER=1"
+      - "-DCONFIG_ESP_WIFI_TX_BUFFER_TYPE=1"
+      # Forces instruction fetching directly to cache, reducing PSRAM roundtrips
+      # Adding these finally got rid of all the flicker and tearing!
+      - "-DCONFIG_SPIRAM_FETCH_INSTRUCTIONS=1"
+      - "-DCONFIG_SPIRAM_RODATA=1"
+    board_build.arduino.memory_type: qio_opi # dont change or it will destabilize display
+    board_build.flash_mode: dio
+    board_upload.maximum_ram_size: 524288
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    # Add this block to fix the lwIP bridge range constraint:
+    sdkconfig_options:
+      CONFIG_LWIP_BRIDGEIF_MAX_PORTS: "1"
+
+logger:
+  level: DEBUG
+  hardware_uart: USB_SERIAL_JTAG
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: NONE
+
+ota:
+  - platform: esphome
+
+api:
+  encryption:
+    key: !secret encryption_key
+
+ch422g:
+  - id: ch422g_hub
+    i2c_id: i2c_bus
+
+i2c:
+  - id: i2c_bus
+    sda: 8
+    scl: 9
+    scan: true
+    frequency: 400kHz
+
+psram:
+  mode: octal
+  speed: 80MHz # 80 is max. can try to max cpu freq to 240 if we want to try faster GDMA routing
+
+display:
+  - platform: mipi_rgb
+    id: my_display
+    model: ESP32-S3-TOUCH-LCD-4.3
+    # fine tune these to reliably center the screen
+    # based off spec sheet https://files.waveshare.com/wiki/common/ST7262.pdf
+    dimensions:
+      width: 800
+      height: 480
+    hsync_pulse_width: 4
+    hsync_back_porch: 8
+    hsync_front_porch: 8
+    vsync_pulse_width: 4
+    vsync_back_porch: 8
+    vsync_front_porch: 8
+
+touchscreen:
+  - platform: gt911
+    id: my_touchscreen
+    interrupt_pin: 4
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+    on_touch:
+      - lambda: |-
+          ESP_LOGI("Touch", "Touch detected at x=%d, y=%d", touch.x, touch.y);
