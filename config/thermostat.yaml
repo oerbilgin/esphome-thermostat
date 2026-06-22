@@ -40,7 +40,8 @@ lvgl:
   on_idle:
     - timeout: 30s
       then:
-        - lvgl.widget.show: screen_dimmer
+        - lvgl.widget.show:
+            id: screen_dimmer
 
   pages:
     - id: canvas_9
@@ -73,6 +74,33 @@ lvgl:
                   radius: 89
                   text_color: 0x1F2937
                   checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: cool_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - heat_mode_button
+                          - fan_mode_button
+                          - auto_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.widget.show:
+                        id: turbo_button
+                    - lvgl.widget.show:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.show:
+                        id: setpoint
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
                   widgets:
                     - label:
                         id: cool_mode_icon
@@ -95,6 +123,33 @@ lvgl:
                   radius: 89
                   text_color: 0x1F2937
                   checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: heat_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - fan_mode_button
+                          - auto_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.widget.show:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.show:
+                        id: setpoint
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
                   widgets:
                     - label:
                         id: heat_mode_icon
@@ -117,6 +172,33 @@ lvgl:
                   radius: 89
                   text_color: 0x1F2937
                   checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: fan_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - heat_mode_button
+                          - auto_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.widget.show:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: setpoint
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
                   widgets:
                     - label:
                         id: fan_mode_icon
@@ -139,6 +221,33 @@ lvgl:
                   radius: 89
                   text_color: 0x1F2937
                   checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: auto_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - heat_mode_button
+                          - fan_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.widget.show:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: setpoint
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
                   widgets:
                     - label:
                         id: auto_mode_icon
@@ -163,6 +272,37 @@ lvgl:
                   checkable: true
                   state:
                     checked: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: off_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - heat_mode_button
+                          - fan_mode_button
+                          - auto_mode_button
+                        state:
+                          checked: false
+                    - lvgl.widget.show:
+                        id: off_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: hvac_status_label
+                    - lvgl.widget.hide:
+                        id: next_hvac_mode
+                    - lvgl.widget.hide:
+                        id: fan_selector
                   widgets:
                     - label:
                         id: off_mode_icon
@@ -279,6 +419,7 @@ lvgl:
             y: 10
             width: 400
             height: 400
+            hidden: true
             bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
@@ -513,7 +654,50 @@ lvgl:
                     border_width: 2
                     border_color: 0x6366F1
                   bg_opa: 0%
-
+        - obj:
+            id: off_mode_thermostat
+            x: 390
+            y: 10
+            width: 400
+            height: 400
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 1
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - arc:
+                  id: off_mode_arc
+                  x: 0
+                  y: 0
+                  width: 400
+                  height: 400
+                  value: 100
+                  min_value: 0
+                  max_value: 100
+                  adjustable: false
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: 20
+                  arc_opa: 100%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0xD1D5DB
+                    arc_width: 20
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0x7DD3FC
+                    radius: 9999
+                    pad_all: -4
+                    border_width: 2
+                    border_color: 0x0369A1
+                  bg_opa: 0%
         - obj:
             id: fan_mode_thermostat
             x: 390
@@ -664,6 +848,7 @@ lvgl:
             width: 180
             height: 40
             text: "Status"
+            hidden: true
             text_color: 0x000000
             text_align: CENTER
             text_font: montserrat_30
@@ -680,6 +865,7 @@ lvgl:
             border_color: 0x4B5563
             radius: 8
             pad_all: 0
+            hidden: true
             scrollbar_mode: "OFF"
             widgets:
               - dropdown:
@@ -724,6 +910,7 @@ lvgl:
             bg_color: 0xE5E7EB
             radius: 120
             text_color: 0x1F2937
+            hidden: true
             checkable: true
             widgets:
               - label:
@@ -938,6 +1125,7 @@ lvgl:
             height: 24
             text: "Change to 60 at 8:00pm"
             text_color: 0x000000
+            hidden: true
             text_align: CENTER
             text_font: montserrat_18
 
@@ -1043,4 +1231,5 @@ lvgl:
             pad_all: 0
             clickable: true
             on_short_click:
-              - lvgl.widget.hide: screen_dimmer
+              - lvgl.widget.hide:
+                  id: screen_dimmer
