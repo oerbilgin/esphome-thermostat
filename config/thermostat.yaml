@@ -34,6 +34,12 @@ font:
     ]
 
 lvgl:
+  # dim the screen after 30 seconds of inactivity
+  on_idle:
+    - timeout: 30s
+      then:
+        - lvgl.widget.show: screen_dimmer
+
   pages:
     - id: canvas_9
       bg_color: 0xE6E1D1
@@ -1019,7 +1025,7 @@ lvgl:
             text_font: montserrat_32
             text_align: CENTER
             text_color: 0x10B981
-
+        # screen dimmer overlay - dims the screen after 30 seconds of inactivity, blocks touching
         - obj:
             id: screen_dimmer
             x: 0
@@ -1031,5 +1037,8 @@ lvgl:
             border_width: 0
             border_color: 0x4B5563
             radius: 0
-            opa: 75%
+            opa: 50%
             pad_all: 0
+            clickable: true
+            on_short_click:
+              - lvgl.widget.hide: screen_dimmer

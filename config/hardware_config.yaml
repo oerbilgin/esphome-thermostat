@@ -1,6 +1,5 @@
 # This is the hardware configuration file for the ESP32-S3-DevKitC-1 board with a 4.3" capacitive touch display from Waveshare.
 # It sets up the necessary hardware components, including getting a stable display, I2C communication, touchscreen, and wifi
-# TODO: set a backlight timer to dim the screen using LVGL layer. 
 
 esphome:
   platformio_options:
