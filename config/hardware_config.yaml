@@ -33,7 +33,6 @@ esp32:
       CONFIG_LWIP_BRIDGEIF_MAX_PORTS: "1"
 
 logger:
-  level: DEBUG
   hardware_uart: USB_SERIAL_JTAG
 
 wifi:
@@ -88,4 +87,4 @@ touchscreen:
       number: 1
     on_touch:
       - lambda: |-
-          ESP_LOGI("Touch", "Touch detected at x=%d, y=%d", touch.x, touch.y);
+          ESP_LOGD("Touch", "Touch detected at x=%d, y=%d", touch.x, touch.y);

@@ -7,6 +7,8 @@ esphome:
   name: hvac-thermostat
   friendly_name: HVAC Thermostat
 
+logger:
+  level: DEBUG
 
 # External icon fonts - auto-generated for icons used in this design
 # ESPHome downloads fonts automatically on first compile
