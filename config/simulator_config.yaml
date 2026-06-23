@@ -1,0 +1,24 @@
+esphome:
+  name: hvac-thermostat-sim
+  friendly_name: Simulated HVAC Thermostat
+
+packages:
+  main: !include thermostat_ui.yaml
+
+host:
+
+time:
+  - platform: host
+    id: sntp_time
+
+display:
+  - platform: sdl
+    id: my_display
+    dimensions:
+      width: 800
+      height: 480
+
+touchscreen:
+  - platform: sdl
+    id: my_touch
+    display: my_display

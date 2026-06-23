@@ -17,3 +17,18 @@ The stable hardware setup is now in `config/hardware_config.yaml` and can be reu
 
 ### Changes performed:
 - 
+
+## Development tips
+### VSCode extensions
+- ESPHome extension
+    - set the dashboard URI to `http://localhost:6052`
+    - set the validator to `dashboard`
+    - run esphome server via `docker-compose up -d`
+
+### ESPHome emulator
+```sh
+brew install sdl2
+brew install python@3.11
+cd config
+uv run --python 3.11 --with esphome esphome run simulator_config.yaml
+```

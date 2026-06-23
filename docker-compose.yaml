@@ -1,0 +1,15 @@
+services:
+  esphome:
+    container_name: esphome-dashboard
+    image: esphome/esphome:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6052:6052"
+    environment:
+      - ESPHOME_DASHBOARD_USE_PING=true
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped

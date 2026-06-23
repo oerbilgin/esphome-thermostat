@@ -1,0 +1,1283 @@
+
+substitutions:
+  thermostat_x_pos: 390
+  thermostat_y_pos: 10
+  thermostat_arc_x_pos: 0
+  thermostat_arc_y_pos: 10
+  thermostat_arc_width: 48
+  thermostat_setpoint_knob_size: 8
+  thermostat_actual_knob_size: -4
+
+time:
+  id: sntp_time
+  timezone: "America/Los_Angeles"
+  on_time:
+    - seconds: /60
+      then:
+        - if:
+            condition:
+              lambda: 'return id(sntp_time).now().is_valid();'
+            then:
+              - lvgl.label.update:
+                  id: todays_date
+                  text: !lambda |-
+                    return id(sntp_time).now().strftime("%A, %B %d %Y");
+              - lvgl.label.update:
+                  id: todays_time
+                  text: !lambda |-
+                    return id(sntp_time).now().strftime("%l:%M %p");
+
+# External icon fonts - auto-generated for icons used in this design
+# ESPHome downloads fonts automatically on first compile
+font:
+  - file:
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
+      type: web
+    id: mdi_icons_34
+    size: 34
+    glyphs: [
+      "\U000F0210",  # Fan
+    ]
+  - file:
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
+      type: web
+    id: mdi_icons_48
+    size: 48
+    glyphs: [
+      "\U000F0717",  # Snowflake
+      "\U000F0238",  # Fire
+      "\U000F0210",  # Fan
+      "\U000F0393",  # Thermostat
+      "\U000F059D",  # Windy
+      "\U000F0595",  # Partly Cloudy
+    ]
+
+lvgl:
+  # dim the screen after 30 seconds of inactivity
+  on_idle:
+    - timeout: 30s
+      then:
+        - lvgl.widget.show:
+            id: screen_dimmer
+
+  pages:
+    - id: canvas_9
+      bg_color: 0xE6E1D1
+      bg_opa: 100%
+      pad_all: 0
+      scrollbar_mode: "OFF"
+      widgets:
+        - obj:
+            id: mode_buttons_group
+            x: 390
+            y: 380
+            width: 400
+            height: 91
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            radius: 8
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - button:
+                  id: cool_mode_button
+                  x: 0
+                  y: 3
+                  width: 69
+                  height: 85
+                  bg_color: 0xE5E7EB
+                  radius: 89
+                  text_color: 0x1F2937
+                  checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: cool_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - heat_mode_button
+                          - fan_mode_button
+                          - auto_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.label.update:
+                        id: hvac_mode_label
+                        text: "Cool"
+                    - lvgl.label.update:
+                        id: setpoint_number
+                        text: "70oF"
+                        text_font: montserrat_34
+                    - lvgl.widget.show:
+                        id: turbo_button
+                    - lvgl.widget.show:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.show:
+                        id: setpoint
+                    - lvgl.widget.show:
+                        id: fan_selector
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
+                  widgets:
+                    - label:
+                        id: cool_mode_icon
+                        x: 0
+                        y: 0
+                        width: 48
+                        height: 48
+                        align: CENTER
+                        text: "\U000F0717"
+                        text_font: mdi_icons_48
+                        text_align: CENTER
+                        text_color: 0x1F2937
+              - button:
+                  id: heat_mode_button
+                  x: 83
+                  y: 3
+                  width: 69
+                  height: 85
+                  bg_color: 0xE5E7EB
+                  radius: 89
+                  text_color: 0x1F2937
+                  checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: heat_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - fan_mode_button
+                          - auto_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.label.update:
+                        id: hvac_mode_label
+                        text: "Heat"
+                    - lvgl.label.update:
+                        id: setpoint_number
+                        text: "80oF"
+                        text_font: montserrat_34
+                    - lvgl.widget.show:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.show:
+                        id: setpoint
+                    - lvgl.widget.show:
+                        id: fan_selector
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
+                  widgets:
+                    - label:
+                        id: heat_mode_icon
+                        x: 0
+                        y: 0
+                        width: 48
+                        height: 48
+                        align: CENTER
+                        text: "\U000F0238"
+                        text_font: mdi_icons_48
+                        text_align: CENTER
+                        text_color: 0x1F2937
+              - button:
+                  id: fan_mode_button
+                  x: 166
+                  y: 3
+                  width: 69
+                  height: 85
+                  bg_color: 0xE5E7EB
+                  radius: 89
+                  text_color: 0x1F2937
+                  checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: fan_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - heat_mode_button
+                          - auto_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.label.update:
+                        id: hvac_mode_label
+                        text: "Fan"
+                    - lvgl.label.update:
+                        id: setpoint_number
+                        text: "\U000F0210"
+                        text_font: mdi_icons_48
+                    - lvgl.widget.show:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.show:
+                        id: fan_selector
+                    - lvgl.widget.show:
+                        id: setpoint
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
+                  widgets:
+                    - label:
+                        id: fan_mode_icon
+                        x: 0
+                        y: 0
+                        width: 48
+                        height: 48
+                        align: CENTER
+                        text: "\U000F0210"
+                        text_font: mdi_icons_48
+                        text_align: CENTER
+                        text_color: 0x1F2937
+              - button:
+                  id: auto_mode_button
+                  x: 250
+                  y: 3
+                  width: 69
+                  height: 85
+                  bg_color: 0xE5E7EB
+                  radius: 89
+                  text_color: 0x1F2937
+                  checkable: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: auto_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - heat_mode_button
+                          - fan_mode_button
+                          - off_mode_button
+                        state:
+                          checked: false
+                    - lvgl.widget.show:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: setpoint
+                    - lvgl.widget.hide:
+                        id: off_mode_thermostat
+                    - lvgl.widget.show:
+                        id: fan_selector
+                  widgets:
+                    - label:
+                        id: auto_mode_icon
+                        x: 0
+                        y: 0
+                        width: 48
+                        height: 48
+                        align: CENTER
+                        text: "\U000F0393"
+                        text_font: mdi_icons_48
+                        text_align: CENTER
+                        text_color: 0x1F2937
+              - button:
+                  id: off_mode_button
+                  x: 331
+                  y: 3
+                  width: 69
+                  height: 85
+                  bg_color: 0xE5E7EB
+                  radius: 89
+                  text_color: 0x1F2937
+                  checkable: true
+                  state:
+                    checked: true
+                  on_click:
+                    - lvgl.widget.update:
+                        id: off_mode_button
+                        state:
+                          checked: true
+                    - lvgl.widget.update:
+                        id: 
+                          - cool_mode_button
+                          - heat_mode_button
+                          - fan_mode_button
+                          - auto_mode_button
+                        state:
+                          checked: false
+                    - lvgl.label.update:
+                        id: setpoint_number
+                        text: "OFF"
+                        text_font: montserrat_34
+                    - lvgl.label.update:
+                        id: hvac_mode_label
+                        text: ""
+                    - lvgl.widget.show:
+                        id: setpoint
+                    - lvgl.widget.show:
+                        id: off_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: turbo_button
+                    - lvgl.widget.hide:
+                        id: cool_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: heat_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: fan_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: auto_mode_thermostat
+                    - lvgl.widget.hide:
+                        id: hvac_status_label
+                    - lvgl.widget.hide:
+                        id: next_hvac_mode
+                    - lvgl.widget.hide:
+                        id: fan_selector
+                  widgets:
+                    - label:
+                        id: off_mode_icon
+                        x: 0
+                        y: 0
+                        width: 38
+                        height: 48
+                        align: CENTER
+                        text: "\uF011"
+                        text_font: montserrat_48
+                        text_align: CENTER
+                        text_color: 0x1F2937
+
+        - label:
+            id: todays_date
+            x: 20
+            y: 10
+            width: 370
+            height: 30
+            text: "Fetching date..."
+            text_color: 0x000000
+            text_align: LEFT
+            text_font: montserrat_24
+
+        - label:
+            id: todays_time
+            x: 20
+            y: 40
+            width: 370
+            height: 30
+            text: "Fetching time..."
+            text_color: 0x000000
+            text_align: LEFT
+            text_font: montserrat_24
+
+        - obj:
+            id: heat_mode_thermostat
+            x: $thermostat_x_pos
+            y: $thermostat_y_pos
+            width: 400
+            height: 400
+            hidden: true
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - arc:
+                  id: heat_arc_actual_temp
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 65
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  mode: REVERSE
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 100%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0xDC2626
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0xF87171
+                    radius: 9999
+                    pad_all: $thermostat_actual_knob_size
+                    border_width: 2
+                    border_color: 0xB91C1C
+                  bg_opa: 0%
+              - arc:
+                  id: heat_arc_setpoint
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 36
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  mode: REVERSE
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0xEA580C
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0xFAFAFA
+                    radius: 9999
+                    pad_all: $thermostat_setpoint_knob_size
+                    border_width: 2
+                    border_color: 0x6366F1
+                  bg_opa: 0%
+
+        - obj:
+            id: auto_mode_thermostat
+            x: $thermostat_x_pos
+            y: $thermostat_y_pos
+            width: 400
+            height: 400
+            hidden: true
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - arc:
+                  id: auto_heat_arc_actual_temp
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 50
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  mode: REVERSE
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0xDC2626
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: false
+                  knob:
+                    bg_color: 0xF87171
+                    radius: 9999
+                    pad_all: $thermostat_actual_knob_size
+                    border_width: 2
+                    border_color: 0xB91C1C
+                  bg_opa: 0%
+              - label:
+                  id: auto_cool_setpoint_number
+                  x: 90
+                  y: 161
+                  width: 95
+                  height: 60
+                  text: "68"
+                  text_color: 0x000000
+                  text_align: CENTER
+                  text_font: montserrat_48
+              - label:
+                  id: auto_cool_setpoint_label
+                  x: 98
+                  y: 218
+                  width: 75
+                  height: 25
+                  text: "Cool"
+                  text_color: 0x000000
+                  text_align: CENTER
+                  text_font: montserrat_16
+              - label:
+                  id: auto_heat_setpoint_number
+                  x: 207
+                  y: 161
+                  width: 95
+                  height: 60
+                  text: "74"
+                  text_color: 0x000000
+                  text_align: CENTER
+                  text_font: montserrat_48
+              - label:
+                  id: auto_heat_setpoint_label
+                  x: 218
+                  y: 217
+                  width: 75
+                  height: 25
+                  text: "Heat"
+                  text_color: 0x000000
+                  text_align: CENTER
+                  text_font: montserrat_16
+              - arc:
+                  id: auto_cool_arc_actual_temp
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 50
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0x0369A1
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: false
+                  knob:
+                    bg_color: 0x94A3B8
+                    radius: 9999
+                    pad_all: $thermostat_actual_knob_size
+                    border_width: 2
+                  bg_opa: 0%
+              - arc:
+                  id: auto_cool_arc_setpoint
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 41
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0x6366F1
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0xFAFAFA
+                    radius: 9999
+                    pad_all: $thermostat_setpoint_knob_size
+                    border_width: 2
+                    border_color: 0x6366F1
+                  bg_opa: 0%
+              - arc:
+                  id: auto_heat_arc_setpoint
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 36
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  mode: REVERSE
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0xEA580C
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0xFAFAFA
+                    radius: 9999
+                    pad_all: $thermostat_setpoint_knob_size
+                    border_width: 2
+                    border_color: 0x6366F1
+                  bg_opa: 0%
+
+        - obj:
+            id: cool_mode_thermostat
+            x: $thermostat_x_pos
+            y: $thermostat_y_pos
+            width: 400
+            height: 400
+            hidden: true
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - arc:
+                  id: cool_arc_actual_temp
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 65
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 100%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0x0284C7
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0x38BDF8
+                    radius: 9999
+                    pad_all: $thermostat_actual_knob_size
+                    border_width: 2
+                    border_color: 0x0C4A6E
+                  bg_opa: 0%
+              - arc:
+                  id: cool_setpoint
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 50
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0x6366F1
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0xFAFAFA
+                    radius: 9999
+                    pad_all: $thermostat_setpoint_knob_size
+                    border_width: 2
+                    border_color: 0x6366F1
+                  bg_opa: 0%
+        - obj:
+            id: off_mode_thermostat
+            x: $thermostat_x_pos
+            y: $thermostat_y_pos
+            width: 400
+            height: 400
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 1
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - arc:
+                  id: off_mode_arc
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 100
+                  min_value: 0
+                  max_value: 100
+                  adjustable: false
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 100%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0xD1D5DB
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0x7DD3FC
+                    radius: 9999
+                    pad_all: $thermostat_actual_knob_size
+                    border_width: 2
+                    border_color: 0x0369A1
+                  bg_opa: 0%
+        - obj:
+            id: fan_mode_thermostat
+            x: $thermostat_x_pos
+            y: $thermostat_y_pos
+            width: 400
+            height: 400
+            hidden: true
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 1
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - arc:
+                  id: fan_mode_arc
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 100
+                  min_value: 0
+                  max_value: 100
+                  adjustable: false
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 100%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0x0369A1
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 100%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0x7DD3FC
+                    radius: 9999
+                    pad_all: $thermostat_actual_knob_size
+                    border_width: 2
+                    border_color: 0x0369A1
+                  bg_opa: 0%
+
+        - obj:
+            id: setpoint
+            x: 525
+            y: 85
+            width: 130
+            height: 65
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            radius: 8
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: setpoint_number
+                  x: 0
+                  y: 0
+                  width: 130
+                  height: 45
+                  align: TOP_MID
+                  text: "OFF"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_34
+              - label:
+                  id: hvac_mode_label
+                  x: 0
+                  y: 0
+                  width: 75
+                  height: 20
+                  align: BOTTOM_MID
+                  text: ""
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_14
+
+        - obj:
+            id: current_temp
+            x: 510
+            y: 170
+            width: 160
+            height: 80
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: current_temp_number
+                  x: 0
+                  y: 0
+                  width: 160
+                  height: 60
+                  align: TOP_MID
+                  text: "100oF"
+                  text_color: 0x000000
+                  text_align: CENTER
+                  text_font: montserrat_48
+              - label:
+                  id: current_temp_label
+                  x: 0
+                  y: 0
+                  width: 75
+                  height: 25
+                  align: BOTTOM_MID
+                  text: "Current"
+                  text_color: 0x000000
+                  text_align: CENTER
+                  text_font: montserrat_16
+
+        - label:
+            id: hvac_status_label
+            x: 500
+            y: 120
+            width: 180
+            height: 40
+            text: "Status"
+            hidden: true
+            text_color: 0x000000
+            text_align: CENTER
+            text_font: montserrat_30
+
+        - obj:
+            id: fan_selector
+            x: 515
+            y: 320
+            width: 150
+            height: 48
+            bg_color: 0x4F46E5
+            bg_opa: 0%
+            border_width: 0
+            border_color: 0x4B5563
+            radius: 8
+            pad_all: 0
+            hidden: true
+            scrollbar_mode: "OFF"
+            widgets:
+              - dropdown:
+                  id: fan_options
+                  x: 0
+                  y: 0
+                  width: 150
+                  height: 48
+                  options:
+                    - "Auto"
+                    - "Quiet"
+                    - "Low"
+                    - "Medium"
+                    - "High"
+                  selected_index: 0
+                  dir: TOP
+                  bg_color: 0xE5E7EB
+                  border_width: 1
+                  border_color: 0xD1D5DB
+                  radius: 12
+                  text_color: 0x1F2937
+                  text_font: montserrat_18
+                  pad_left: 40
+              - label:
+                  id: fan_options_icon
+                  x: 0
+                  y: 0
+                  width: 34
+                  height: 34
+                  align: LEFT_MID
+                  text: "\U000F0210"
+                  text_font: mdi_icons_34
+                  text_align: CENTER
+                  text_color: 0x1F2937
+
+        - button:
+            id: turbo_button
+            x: 301
+            y: 386
+            width: 69
+            height: 85
+            bg_color: 0xE5E7EB
+            radius: 120
+            text_color: 0x1F2937
+            hidden: true
+            checkable: true
+            widgets:
+              - label:
+                  id: turbo_icon
+                  x: 0
+                  y: 0
+                  width: 48
+                  height: 48
+                  align: CENTER
+                  text: "\U000F059D"
+                  text_font: mdi_icons_48
+                  text_align: CENTER
+                  text_color: 0x1F2937
+
+        - obj:
+            id: outside_temp_chip
+            x: 20
+            y: 224
+            width: 110
+            height: 110
+            bg_color: 0xFEE2E2
+            border_width: 0
+            border_color: 0xFCA5A5
+            radius: 8
+            shadow_width: 15
+            shadow_color: 0xF87171
+            shadow_opa: 20%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: outside_temp_number
+                  x: 0
+                  y: 10
+                  width: 110
+                  height: 40
+                  text: "101oF"
+                  text_color: 0xDC2626
+                  text_align: CENTER
+                  text_font: montserrat_40
+              - label:
+                  id: outside_temp_label
+                  x: 5
+                  y: 70
+                  width: 100
+                  height: 30
+                  text: "Outside"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_20
+
+        - button:
+            id: up_button
+            x: 293
+            y: 90
+            width: 86
+            height: 100
+            bg_color: 0xE5E7EB
+            radius: 120
+            text_color: 0x1F2937
+            widgets:
+              - label:
+                  id: up_button_icon
+                  x: 0
+                  y: 0
+                  width: 48
+                  height: 48
+                  align: CENTER
+                  text: "\uF077"
+                  text_font: montserrat_48
+                  text_align: CENTER
+                  text_color: 0x1F2937
+
+        - button:
+            id: down_button
+            x: 293
+            y: 229
+            width: 86
+            height: 100
+            bg_color: 0xE5E7EB
+            radius: 120
+            text_color: 0x1F2937
+            widgets:
+              - label:
+                  id: down_button_icon
+                  x: 0
+                  y: 0
+                  width: 48
+                  height: 48
+                  align: CENTER
+                  text: "\uF078"
+                  text_font: montserrat_48
+                  text_align: CENTER
+                  text_color: 0x1F2937
+
+        - obj:
+            id: aqi_chip
+            x: 155
+            y: 224
+            width: 110
+            height: 110
+            bg_color: 0xDCFCE7
+            border_width: 0
+            border_color: 0x86EFAC
+            radius: 8
+            shadow_width: 15
+            shadow_color: 0x86EFAC
+            shadow_opa: 20%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: aqi_number
+                  x: 0
+                  y: 10
+                  width: 110
+                  height: 40
+                  text: "42"
+                  text_color: 0x16A34A
+                  text_align: CENTER
+                  text_font: montserrat_40
+              - label:
+                  id: aqi_label
+                  x: 5
+                  y: 70
+                  width: 100
+                  height: 30
+                  text: "AQI"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_20
+
+        - obj:
+            id: days_low_chip
+            x: 155
+            y: 85
+            width: 110
+            height: 110
+            bg_color: 0xCFF0F8
+            border_width: 0
+            border_color: 0x7DD3FC
+            radius: 8
+            shadow_width: 15
+            shadow_color: 0x7DD3FC
+            shadow_opa: 20%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: days_low_number
+                  x: 0
+                  y: 10
+                  width: 110
+                  height: 40
+                  text: "42oF"
+                  text_color: 0x0369A1
+                  text_align: CENTER
+                  text_font: montserrat_40
+              - label:
+                  id: days_low_label
+                  x: 5
+                  y: 70
+                  width: 100
+                  height: 30
+                  text: "Low"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_20
+
+        - obj:
+            id: days_high_chip
+            x: 20
+            y: 85
+            width: 110
+            height: 110
+            bg_color: 0xFEF3C7
+            border_width: 0
+            border_color: 0xFCD34D
+            radius: 8
+            shadow_width: 15
+            shadow_color: 0xFCD34D
+            shadow_opa: 20%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: days_high_number
+                  x: 0
+                  y: 10
+                  width: 110
+                  height: 40
+                  text: "72oF"
+                  text_color: 0xCA8A04
+                  text_align: CENTER
+                  text_font: montserrat_40
+              - label:
+                  id: days_high_label
+                  x: 5
+                  y: 70
+                  width: 100
+                  height: 30
+                  text: "High"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_20
+
+        - label:
+            id: next_hvac_mode
+            x: 440
+            y: 270
+            width: 300
+            height: 24
+            text: "Change to 60 at 8:00pm"
+            text_color: 0x000000
+            hidden: true
+            text_align: CENTER
+            text_font: montserrat_18
+
+        - obj:
+            id: days_condition_chip
+            x: 20
+            y: 361
+            width: 110
+            height: 110
+            bg_color: 0xFEF3C7
+            bg_grad_color: 0xFAFAFA
+            bg_grad_dir: VER
+            border_width: 0
+            border_color: 0xFCD34D
+            radius: 8
+            shadow_width: 15
+            shadow_color: 0xFCD34D
+            shadow_opa: 20%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: days_condition_label
+                  x: 5
+                  y: 70
+                  width: 100
+                  height: 30
+                  text: "Pt Cloudy"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_20
+              - label:
+                  id: days_condition_label_1
+                  x: 31
+                  y: 12
+                  width: 48
+                  height: 48
+                  text: "\U000F0595"
+                  text_font: mdi_icons_48
+                  text_align: CENTER
+                  text_color: 0xCA8A04
+
+        - obj:
+            id: next_rain_chip
+            x: 155
+            y: 361
+            width: 110
+            height: 110
+            bg_color: 0xCFF0F8
+            border_width: 0
+            border_color: 0x7DD3FC
+            radius: 8
+            shadow_width: 15
+            shadow_color: 0x7DD3FC
+            shadow_opa: 20%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: next_rain_day
+                  x: 0
+                  y: 10
+                  width: 110
+                  height: 40
+                  text: "Tues"
+                  text_color: 0x0369A1
+                  text_align: CENTER
+                  text_font: montserrat_40
+              - label:
+                  id: next_rain_label
+                  x: 5
+                  y: 70
+                  width: 100
+                  height: 30
+                  text: "Next Rain"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_20
+
+        - label:
+            id: wifi_status_icon
+            x: 759
+            y: 10
+            width: 32
+            height: 32
+            text: "\uF1EB"
+            text_font: montserrat_32
+            text_align: CENTER
+            text_color: 0x10B981
+        - label:
+            id: hass_status_icon
+            x: 711
+            y: 10
+            width: 32
+            height: 32
+            text: "\uF015"
+            text_font: montserrat_32
+            text_align: CENTER
+            text_color: 0x10B981
+        # screen dimmer overlay - dims the screen after 30 seconds of inactivity, blocks touching
+        - obj:
+            id: screen_dimmer
+            x: 0
+            y: 0
+            width: 800
+            height: 480
+            hidden: true
+            bg_color: 0x000000
+            border_width: 0
+            border_color: 0x4B5563
+            radius: 0
+            opa: 50%
+            pad_all: 0
+            clickable: true
+            on_short_click:
+              - lvgl.widget.hide:
+                  id: screen_dimmer
