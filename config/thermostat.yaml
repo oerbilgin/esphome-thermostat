@@ -9,6 +9,29 @@ esphome:
 
 logger:
   level: DEBUG
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "America/Los_Angeles" # Change to your timezone
+    on_time:
+      - seconds: /60
+        then:
+          # Only update if time is valid
+          - if:
+              condition:
+                lambda: 'return id(sntp_time).now().is_valid();'
+              then:
+                # 1. Update the Date Label
+                - lvgl.label.update:
+                    id: todays_date
+                    text: !lambda |-
+                      return id(sntp_time).now().strftime("%A, %B %d %Y");
+
+                # 2. Update the Time Label (uses %l to drop the leading zero, e.g., "4:20 PM")
+                - lvgl.label.update:
+                    id: todays_time
+                    text: !lambda |-
+                      return id(sntp_time).now().strftime("%l:%M %p");
 
 # External icon fonts - auto-generated for icons used in this design
 # ESPHome downloads fonts automatically on first compile
@@ -87,12 +110,17 @@ lvgl:
                           - off_mode_button
                         state:
                           checked: false
+                    - lvgl.label.update:
+                        id: setpoint_label
+                        text: "Cool"
                     - lvgl.widget.show:
                         id: turbo_button
                     - lvgl.widget.show:
                         id: cool_mode_thermostat
                     - lvgl.widget.show:
                         id: setpoint
+                    - lvgl.widget.show:
+                        id: fan_selector
                     - lvgl.widget.hide:
                         id: heat_mode_thermostat
                     - lvgl.widget.hide:
@@ -136,10 +164,15 @@ lvgl:
                           - off_mode_button
                         state:
                           checked: false
+                    - lvgl.label.update:
+                        id: setpoint_label
+                        text: "Heat"
                     - lvgl.widget.show:
                         id: heat_mode_thermostat
                     - lvgl.widget.show:
                         id: setpoint
+                    - lvgl.widget.show:
+                        id: fan_selector
                     - lvgl.widget.hide:
                         id: turbo_button
                     - lvgl.widget.hide:
@@ -187,6 +220,8 @@ lvgl:
                           checked: false
                     - lvgl.widget.show:
                         id: fan_mode_thermostat
+                    - lvgl.widget.show:
+                        id: fan_selector
                     - lvgl.widget.hide:
                         id: turbo_button
                     - lvgl.widget.hide:
@@ -285,6 +320,14 @@ lvgl:
                           - auto_mode_button
                         state:
                           checked: false
+                    - lvgl.label.update:
+                        id: setpoint_number
+                        text: "OFF"
+                    - lvgl.label.update:
+                        id: setpoint_label
+                        text: ""
+                    - lvgl.widget.show:
+                        id: setpoint
                     - lvgl.widget.show:
                         id: off_mode_thermostat
                     - lvgl.widget.hide:
@@ -322,7 +365,7 @@ lvgl:
             y: 10
             width: 370
             height: 30
-            text: "Wednesday, September 30 2026"
+            text: "Fetching date..."
             text_color: 0x000000
             text_align: LEFT
             text_font: montserrat_24
@@ -333,7 +376,7 @@ lvgl:
             y: 40
             width: 370
             height: 30
-            text: "4:20 PM"
+            text: "Fetching time..."
             text_color: 0x000000
             text_align: LEFT
             text_font: montserrat_24

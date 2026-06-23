@@ -10,3 +10,5 @@ DEV.md
 esphome-mideaXYE-rs485/
 hardware_resources/
 thermostat_light.yaml
+.venv/
+.venv-sim/
