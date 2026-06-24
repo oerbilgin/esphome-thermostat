@@ -11,6 +11,14 @@ packages:
 
 host:
 
+# network and api sections so simulator can talk to hass
+network:
+  enable_ipv6: false
+
+api:
+  encryption:
+    key: !secret encryption_key
+
 display:
   - platform: sdl
     id: my_display
