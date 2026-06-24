@@ -1252,7 +1252,7 @@ lvgl:
             text: "\uF1EB"
             text_font: montserrat_32
             text_align: CENTER
-            text_color: 0x10B981
+            text_color: 0x6B7280
         - label:
             id: hass_status_icon
             x: 711
@@ -1262,7 +1262,7 @@ lvgl:
             text: "\uF015"
             text_font: montserrat_32
             text_align: CENTER
-            text_color: 0x10B981
+            text_color: 0x6B7280
         # screen dimmer overlay - dims the screen after 30 seconds of inactivity, blocks touching
         - obj:
             id: screen_dimmer
@@ -1281,3 +1281,4 @@ lvgl:
             on_short_click:
               - lvgl.widget.hide:
                   id: screen_dimmer
+        
