@@ -9,6 +9,7 @@ host:
 
 time:
   - platform: host
+    timezone: "America/Los_Angeles"
     id: sntp_time
 
 display:

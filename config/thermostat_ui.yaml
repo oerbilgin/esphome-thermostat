@@ -10,7 +10,6 @@ substitutions:
 
 time:
   id: sntp_time
-  timezone: "America/Los_Angeles"
   on_time:
     - seconds: /60
       then:
@@ -223,15 +222,11 @@ lvgl:
                     - lvgl.label.update:
                         id: hvac_mode_label
                         text: "Fan"
-                    - lvgl.label.update:
-                        id: setpoint_number
-                        text: "\U000F0210"
-                        text_font: mdi_icons_48
                     - lvgl.widget.show:
                         id: fan_mode_thermostat
                     - lvgl.widget.show:
                         id: fan_selector
-                    - lvgl.widget.show:
+                    - lvgl.widget.hide:
                         id: setpoint
                     - lvgl.widget.hide:
                         id: turbo_button
@@ -392,7 +387,6 @@ lvgl:
             text_color: 0x000000
             text_align: LEFT
             text_font: montserrat_24
-
         - obj:
             id: heat_mode_thermostat
             x: $thermostat_x_pos
@@ -422,7 +416,6 @@ lvgl:
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  mode: REVERSE
                   arc_color: 0xD1D5DB
                   arc_width: $thermostat_arc_width
                   arc_opa: 100%
@@ -438,35 +431,6 @@ lvgl:
                     pad_all: $thermostat_actual_knob_size
                     border_width: 2
                     border_color: 0xB91C1C
-                  bg_opa: 0%
-              - arc:
-                  id: heat_arc_setpoint
-                  x: $thermostat_arc_x_pos
-                  y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
-                  value: 36
-                  min_value: 0
-                  max_value: 100
-                  adjustable: true
-                  start_angle: 135
-                  end_angle: 45
-                  mode: REVERSE
-                  arc_color: 0xD1D5DB
-                  arc_width: $thermostat_arc_width
-                  arc_opa: 0%
-                  arc_rounded: true
-                  indicator:
-                    arc_color: 0xEA580C
-                    arc_width: $thermostat_arc_width
-                    arc_opa: 100%
-                    arc_rounded: true
-                  knob:
-                    bg_color: 0xFAFAFA
-                    radius: 9999
-                    pad_all: $thermostat_setpoint_knob_size
-                    border_width: 2
-                    border_color: 0x6366F1
                   bg_opa: 0%
 
         - obj:
@@ -664,6 +628,7 @@ lvgl:
                   width: 400
                   height: 400
                   value: 65
+                  mode: REVERSE
                   min_value: 0
                   max_value: 100
                   adjustable: true
@@ -685,34 +650,7 @@ lvgl:
                     border_width: 2
                     border_color: 0x0C4A6E
                   bg_opa: 0%
-              - arc:
-                  id: cool_setpoint
-                  x: $thermostat_arc_x_pos
-                  y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
-                  value: 50
-                  min_value: 0
-                  max_value: 100
-                  adjustable: true
-                  start_angle: 135
-                  end_angle: 45
-                  arc_color: 0xD1D5DB
-                  arc_width: $thermostat_arc_width
-                  arc_opa: 0%
-                  arc_rounded: true
-                  indicator:
-                    arc_color: 0x6366F1
-                    arc_width: $thermostat_arc_width
-                    arc_opa: 100%
-                    arc_rounded: true
-                  knob:
-                    bg_color: 0xFAFAFA
-                    radius: 9999
-                    pad_all: $thermostat_setpoint_knob_size
-                    border_width: 2
-                    border_color: 0x6366F1
-                  bg_opa: 0%
+              
         - obj:
             id: off_mode_thermostat
             x: $thermostat_x_pos
@@ -774,6 +712,26 @@ lvgl:
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
+              - label:
+                  id: fan_mode_symbol
+                  x: 135
+                  y: 80
+                  width: 130
+                  height: 45
+                  text: "\U000F0210"
+                  text_font: mdi_icons_48
+                  text_color: 0x6B7280
+                  text_align: CENTER
+              - label:
+                  id: fan_mode_label
+                  x: 162
+                  y: 125
+                  width: 75
+                  height: 20
+                  text: "Fan"
+                  text_color: 0x6B7280
+                  text_align: CENTER
+                  text_font: montserrat_14
               - arc:
                   id: fan_mode_arc
                   x: $thermostat_arc_x_pos
@@ -805,10 +763,10 @@ lvgl:
 
         - obj:
             id: setpoint
-            x: 525
-            y: 85
-            width: 130
-            height: 65
+            x: $thermostat_x_pos
+            y: $thermostat_y_pos
+            width: 400
+            height: 400
             bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
@@ -816,29 +774,59 @@ lvgl:
             radius: 8
             pad_all: 0
             scrollbar_mode: "OFF"
+            hidden: true
             widgets:
               - label:
                   id: setpoint_number
-                  x: 0
-                  y: 0
+                  x: 135
+                  y: 80
                   width: 130
                   height: 45
-                  align: TOP_MID
                   text: "OFF"
                   text_color: 0x6B7280
                   text_align: CENTER
                   text_font: montserrat_34
               - label:
                   id: hvac_mode_label
-                  x: 0
-                  y: 0
+                  x: 162
+                  y: 125
                   width: 75
                   height: 20
-                  align: BOTTOM_MID
                   text: ""
                   text_color: 0x6B7280
                   text_align: CENTER
                   text_font: montserrat_14
+              - arc:
+                  id: setpoint_arc
+                  x: $thermostat_arc_x_pos
+                  y: $thermostat_arc_y_pos
+                  width: 400
+                  height: 400
+                  value: 51
+                  min_value: 0
+                  max_value: 100
+                  adjustable: true
+                  start_angle: 135
+                  end_angle: 45
+                  arc_color: 0xD1D5DB
+                  arc_width: $thermostat_arc_width
+                  arc_opa: 0%
+                  arc_rounded: true
+                  indicator:
+                    arc_color: 0x6366F1
+                    arc_width: $thermostat_arc_width
+                    arc_opa: 0%
+                    arc_rounded: true
+                  knob:
+                    bg_color: 0xABABAB
+                    bg_opa: 70%
+                    radius: 9999
+                    pad_all: $thermostat_setpoint_knob_size
+                    border_width: 2
+                    border_color: 0x000000
+                    shadow_width: 10
+                    shadow_opa: 50%
+                  bg_opa: 0%
 
         - obj:
             id: current_temp

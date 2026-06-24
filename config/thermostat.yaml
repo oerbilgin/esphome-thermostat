@@ -15,4 +15,5 @@ packages:
 time:
   # pull in automation from thermostat_ui.yaml to set the time on the ESP32-S3
   - platform: sntp
+    timezone: "America/Los_Angeles"
     id: sntp_time
