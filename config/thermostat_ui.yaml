@@ -15,6 +15,10 @@ globals:
   - id: setpoint_updating
     type: bool
     initial_value: 'false'
+  - id: thermostat_arc_min_value_global
+    type: int
+    initial_value: '32' # cant substitute this for some reason, make sure it matches
+
 
 number:
   - platform: template
@@ -641,7 +645,11 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 82 # FIXME: needs lambda for $thermostat_arc_max_value - actual
+                  value: !lambda |-
+                    int min_val = (int)id(thermostat_arc_min_value_global);
+                    int result = 82 - min_val;
+                    ESP_LOGI("cool_arc", "min_value=%d, result=%d", min_val, result);
+                    return result;
                   mode: REVERSE
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
