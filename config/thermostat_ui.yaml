@@ -9,6 +9,36 @@ substitutions:
   thermostat_actual_knob_size: -4
   thermostat_arc_min_value: 32
   thermostat_arc_max_value: 100
+  initial_setpoint_value: 72
+
+globals:
+  - id: setpoint_updating
+    type: bool
+    initial_value: 'false'
+
+number:
+  - platform: template
+    id: setpoint_value
+    name: "Setpoint Value"
+    min_value: $thermostat_arc_min_value
+    max_value: $thermostat_arc_max_value
+    step: 1
+    optimistic: true
+    initial_value: $initial_setpoint_value
+    restore_value: true
+    set_action:
+      - globals.set:
+          id: setpoint_updating
+          value: 'true'
+      - lvgl.arc.update:
+          id: setpoint_arc
+          value: !lambda 'return x;'
+      - lvgl.label.update:
+          id: setpoint_number
+          text: !lambda 'return to_string((int)x) + "°F";'
+      - globals.set:
+          id: setpoint_updating
+          value: 'false'
 
 # External icon fonts - auto-generated for icons used in this design
 # ESPHome downloads fonts automatically on first compile
@@ -92,7 +122,7 @@ lvgl:
                         text: "Cool"
                     - lvgl.label.update:
                         id: setpoint_number
-                        text: "70oF"
+                        text: !lambda 'return to_string((int)id(setpoint_value).state) + "°F";'
                         text_font: montserrat_34
                     - lvgl.widget.show:
                         id: turbo_button
@@ -150,7 +180,7 @@ lvgl:
                         text: "Heat"
                     - lvgl.label.update:
                         id: setpoint_number
-                        text: "80oF"
+                        text: !lambda 'return to_string((int)id(setpoint_value).state) + "°F";'
                         text_font: montserrat_34
                     - lvgl.widget.show:
                         id: heat_mode_thermostat
@@ -394,7 +424,7 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 65
+                  value: 55
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
                   adjustable: true
@@ -611,7 +641,7 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 65
+                  value: 82 # FIXME: needs lambda for $thermostat_arc_max_value - actual
                   mode: REVERSE
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -786,7 +816,7 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 51
+                  value: $initial_setpoint_value
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
                   adjustable: true
@@ -810,6 +840,14 @@ lvgl:
                     border_color: 0x000000
                     shadow_width: 10
                     shadow_opa: 50%
+                  on_change:
+                    - if:
+                        condition:
+                          lambda: 'return !id(setpoint_updating);'
+                        then:
+                          - number.set:
+                              id: setpoint_value
+                              value: !lambda 'return x;'
                   bg_opa: 0%
 
         - obj:
@@ -981,6 +1019,10 @@ lvgl:
             bg_color: 0xE5E7EB
             radius: 120
             text_color: 0x1F2937
+            on_click:
+              - number.increment:
+                  id: setpoint_value
+                  cycle: true
             widgets:
               - label:
                   id: up_button_icon
@@ -1003,6 +1045,10 @@ lvgl:
             bg_color: 0xE5E7EB
             radius: 120
             text_color: 0x1F2937
+            on_click:
+              - number.decrement:
+                  id: setpoint_value
+                  cycle: true
             widgets:
               - label:
                   id: down_button_icon
