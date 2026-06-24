@@ -8,24 +8,6 @@ substitutions:
   thermostat_setpoint_knob_size: 8
   thermostat_actual_knob_size: -4
 
-time:
-  id: sntp_time
-  on_time:
-    - seconds: /60
-      then:
-        - if:
-            condition:
-              lambda: 'return id(sntp_time).now().is_valid();'
-            then:
-              - lvgl.label.update:
-                  id: todays_date
-                  text: !lambda |-
-                    return id(sntp_time).now().strftime("%A, %B %d %Y");
-              - lvgl.label.update:
-                  id: todays_time
-                  text: !lambda |-
-                    return id(sntp_time).now().strftime("%l:%M %p");
-
 # External icon fonts - auto-generated for icons used in this design
 # ESPHome downloads fonts automatically on first compile
 font:

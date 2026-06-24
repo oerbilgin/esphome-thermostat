@@ -10,10 +10,4 @@ logger:
 packages:
   hardware_config: !include hardware_config.yaml
   thermostat_ui: !include thermostat_ui.yaml
-
-
-time:
-  # pull in automation from thermostat_ui.yaml to set the time on the ESP32-S3
-  - platform: sntp
-    timezone: "America/Los_Angeles"
-    id: sntp_time
+  time_config: !include time_sntp.yaml

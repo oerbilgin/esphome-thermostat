@@ -2,15 +2,14 @@ esphome:
   name: hvac-thermostat-sim
   friendly_name: Simulated HVAC Thermostat
 
+logger:
+  level: DEBUG
+
 packages:
   main: !include thermostat_ui.yaml
+  time_config: !include time_host.yaml
 
 host:
-
-time:
-  - platform: host
-    timezone: "America/Los_Angeles"
-    id: sntp_time
 
 display:
   - platform: sdl

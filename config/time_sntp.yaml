@@ -1,0 +1,19 @@
+time:
+  - platform: sntp
+    timezone: "America/Los_Angeles"
+    id: sntp_time
+    on_time:
+      - seconds: /60
+        then:
+          - if:
+              condition:
+                lambda: 'return id(sntp_time).now().is_valid();'
+              then:
+                - lvgl.label.update:
+                    id: todays_date
+                    text: !lambda |-
+                      return id(sntp_time).now().strftime("%A, %B %d %Y");
+                - lvgl.label.update:
+                    id: todays_time
+                    text: !lambda |-
+                      return id(sntp_time).now().strftime("%l:%M %p");

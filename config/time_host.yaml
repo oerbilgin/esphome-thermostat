@@ -1,0 +1,21 @@
+# make sure the updating logic is identical to time_sntp except for the platform
+time:
+  - platform: host
+    timezone: "America/Los_Angeles"
+    id: sntp_time
+    on_time:
+      - seconds: /60
+        then:
+        # dont need the conditional for host platform since its always valid
+          - if:
+              condition:
+                lambda: 'return 1;' #id(sntp_time).now().is_valid();'
+              then:
+                - lvgl.label.update:
+                    id: todays_date
+                    text: !lambda |-
+                      return id(sntp_time).now().strftime("%A, %B %d %Y");
+                - lvgl.label.update:
+                    id: todays_time
+                    text: !lambda |-
+                      return id(sntp_time).now().strftime("%l:%M %p");
