@@ -15,6 +15,9 @@ globals:
   - id: setpoint_updating
     type: bool
     initial_value: 'false'
+  - id: thermostat_arc_max_value_global
+    type: int
+    initial_value: '100' # cant substitute this for some reason, make sure it matches
   - id: thermostat_arc_min_value_global
     type: int
     initial_value: '32' # cant substitute this for some reason, make sure it matches
@@ -43,6 +46,43 @@ number:
       - globals.set:
           id: setpoint_updating
           value: 'false'
+
+sensor:
+  - platform: homeassistant
+    id: aqi_sensor
+    entity_id: sensor.airnow_air_quality_index
+    internal: true
+    on_value:
+      then:
+        lvgl.label.update:
+          id: aqi_number
+          text: !lambda 'return to_string((int)x);'
+  - platform: homeassistant
+    id: average_house_temperature
+    entity_id: sensor.average_house_temperature
+    internal: true
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: current_temp_number
+            text: !lambda 'return to_string((int)x) + "°F";'
+        - lvgl.arc.update:
+            id: 
+              - heat_arc_actual_temp
+              - auto_heat_arc_actual_temp
+              - auto_cool_arc_actual_temp
+            value: !lambda 'return (int)x;'
+        - lvgl.arc.update:
+            id: 
+              - cool_arc_actual_temp
+              - auto_cool_arc_actual_temp
+            value: !lambda |-
+              int min_val = (int)id(thermostat_arc_min_value_global);
+              int max_val = (int)id(thermostat_arc_max_value_global);
+              int actual_temp = (int)x;
+              int result = max_val - actual_temp + min_val;
+              ESP_LOGI("Thermostat", "Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", min_val, actual_temp, result);
+              return result;
 
 # External icon fonts - auto-generated for icons used in this design
 # ESPHome downloads fonts automatically on first compile
@@ -428,7 +468,7 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 55
+                  value: 0
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
                   adjustable: true
@@ -474,13 +514,12 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 50
+                  value: 0
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  mode: REVERSE
                   arc_color: 0xD1D5DB
                   arc_width: $thermostat_arc_width
                   arc_opa: 0%
@@ -543,7 +582,8 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 50
+                  value: 0
+                  mode: REVERSE
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
                   adjustable: true
@@ -645,11 +685,7 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: !lambda |-
-                    int min_val = (int)id(thermostat_arc_min_value_global);
-                    int result = 82 - min_val;
-                    ESP_LOGI("cool_arc", "min_value=%d, result=%d", min_val, result);
-                    return result;
+                  value: 0
                   mode: REVERSE
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -881,7 +917,7 @@ lvgl:
                   width: 160
                   height: 60
                   align: TOP_MID
-                  text: "100oF"
+                  text: "---"
                   text_color: 0x000000
                   text_align: CENTER
                   text_font: montserrat_48
@@ -1092,7 +1128,7 @@ lvgl:
                   y: 10
                   width: 110
                   height: 40
-                  text: "42"
+                  text: "--"
                   text_color: 0x16A34A
                   text_align: CENTER
                   text_font: montserrat_40
