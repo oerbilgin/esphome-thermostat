@@ -54,9 +54,81 @@ sensor:
     internal: true
     on_value:
       then:
-        lvgl.label.update:
-          id: aqi_number
-          text: !lambda 'return to_string((int)x);'
+        - lvgl.label.update:
+            id: aqi_number
+            text: !lambda 'return to_string((int)x);'
+        - if:
+            condition:
+              lambda: 'return x <= 50;'
+            then:
+              - lvgl.widget.update:
+                  id: aqi_chip
+                  bg_color: 0xD1FAE5
+                  border_color: 0x6EE7B7
+                  shadow_color: 0x6EE7B7
+              - lvgl.label.update:
+                  id: aqi_number
+                  text_color: 0x047857
+        - if:
+            condition:
+              lambda: 'return x > 50 && x <= 100;'
+            then:
+              - lvgl.widget.update:
+                  id: aqi_chip
+                  bg_color: 0xFEF3C7
+                  border_color: 0xFBBF24
+                  shadow_color: 0xFBBF24
+              - lvgl.label.update:
+                  id: aqi_number
+                  text_color: 0x92400E
+        - if:
+            condition:
+              lambda: 'return x > 100 && x <= 150;'
+            then:
+              - lvgl.widget.update:
+                  id: aqi_chip
+                  bg_color: 0xFFF4E1
+                  border_color: 0xF59E0B
+                  shadow_color: 0xF59E0B
+              - lvgl.label.update:
+                  id: aqi_number
+                  text_color: 0x9A3412
+        - if:
+            condition:
+              lambda: 'return x > 150 && x <= 200;'
+            then:
+              - lvgl.widget.update:
+                  id: aqi_chip
+                  bg_color: 0xFECACA
+                  border_color: 0xEF4444
+                  shadow_color: 0xEF4444
+              - lvgl.label.update:
+                  id: aqi_number
+                  text_color: 0xB91C1C
+        - if:
+            condition:
+              lambda: 'return x > 200 && x <= 300;'
+            then:
+              - lvgl.widget.update:
+                  id: aqi_chip
+                  bg_color: 0xE9E4FF
+                  border_color: 0x7C3AED
+                  shadow_color: 0x7C3AED
+              - lvgl.label.update:
+                  id: aqi_number
+                  text_color: 0x4C1D95
+        - if:
+            condition:
+              lambda: 'return x > 300;'
+            then:
+              - lvgl.widget.update:
+                  id: aqi_chip
+                  bg_color: 0xE9D5D3
+                  border_color: 0x881337
+                  shadow_color: 0x881337
+              - lvgl.label.update:
+                  id: aqi_number
+                  text_color: 0x6B0F1F
   - platform: homeassistant
     id: average_house_temperature
     entity_id: sensor.average_house_temperature
