@@ -28,7 +28,12 @@ The stable hardware setup is now in `config/hardware_config.yaml` and can be reu
 ### ESPHome emulator
 ```sh
 brew install sdl2
-brew install python@3.11
+
+uv venv .venv --python 3.12
+source .venv/bin/activate
+uv pip install esphome pillow
+
+source .venv/bin/activate
 cd config
-uv run --python 3.11 --with esphome esphome run simulator_config.yaml
+esphome run simulator_config.yaml
 ```
