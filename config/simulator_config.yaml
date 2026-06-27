@@ -6,8 +6,8 @@ logger:
   level: DEBUG
 
 packages:
-  main: !include thermostat_ui.yaml
-  time_config: !include time_host.yaml
+  main: !include modules/thermostat_ui.yaml
+  time_config: !include modules/time_host.yaml
 
 host:
 

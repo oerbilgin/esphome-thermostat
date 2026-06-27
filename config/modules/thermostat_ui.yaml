@@ -1,3 +1,4 @@
+json:
 
 substitutions:
   thermostat_x_pos: 390
@@ -155,6 +156,71 @@ sensor:
               int result = max_val - actual_temp + min_val;
               ESP_LOGI("Thermostat", "Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", min_val, actual_temp, result);
               return result;
+  
+  - platform: homeassistant
+    id: next_rain_probability
+    entity_id: sensor.next_rain_forecast
+    attribute: precipitation_probability
+    internal: true
+    # on_value: # TODO update rain chip
+
+  - platform: homeassistant
+    id: wind_speed_today
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: wind_speed
+    # on_value: # TODO update wind chip TODO replace condition chip with wind chip
+
+  - platform: homeassistant
+    id: wind_bearing_today
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: wind_bearing
+    # on_value: # TODO update wind chip TODO replace condition chip with wind chip
+
+  - platform: homeassistant
+    id: wind_gust_today
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: wind_gust
+    # on_value: # TODO update wind chip TODO replace condition chip with wind chip
+  
+  - platform: homeassistant
+    id: temperature_today
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: temperature
+    # on_value: # TODO update temp chip; day high if forecast_is_daytime, otherwise this is the low
+  
+  - platform: homeassistant
+    id: temperature_next
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: temperature
+    # on_value: # TODO update temp chip; if forecast_is_daytime = off/false, this is tomorrow's high; update the high temp chip with a symbol for tomorrow
+
+text_sensor:
+  - platform: homeassistant
+    id: next_rain_description
+    entity_id: sensor.next_rain_forecast
+    attribute: description
+    internal: true
+    # on_value: # TODO update the rain chip
+
+  - platform: homeassistant
+    id: forecast_is_daytime
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: is_daytime
+    # on_value: # TODO use to order the temp chips
+  
+  - platform: homeassistant
+    id: conditions_today
+    entity_id: sensor.nws_now_forecast
+    internal: true
+    attribute: condition
+    # on_value: # TODO update the conditions icon (TODO: put this icon next to the date time)
+
 
 # External icon fonts - auto-generated for icons used in this design
 # ESPHome downloads fonts automatically on first compile

@@ -8,6 +8,7 @@ logger:
   level: DEBUG
 
 packages:
-  hardware_config: !include hardware_config.yaml
-  thermostat_ui: !include thermostat_ui.yaml
-  time_config: !include time_sntp.yaml
+  hardware_config: !include modules/hardware_config.yaml
+  thermostat_ui: !include modules/thermostat_ui.yaml
+  time_config: !include modules/time_sntp.yaml
+  midea_xye: !include modules/mideaXYE.yaml
