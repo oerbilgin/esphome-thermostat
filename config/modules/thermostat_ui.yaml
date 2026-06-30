@@ -90,10 +90,10 @@ script:
 
         lv_obj_set_style_bg_color(id(wind_condition_chip), bg_color, LV_PART_MAIN);
         lv_obj_set_style_text_color(id(wind_speed_label), text_color, LV_PART_MAIN);
-
-        lv_obj_set_style_text_color(id(wind_gust_label), label_color, LV_PART_MAIN);
+        lv_obj_set_style_text_color(id(wind_speed_unit), text_color, LV_PART_MAIN);
+        lv_obj_set_style_text_color(id(wind_gust_label), text_color, LV_PART_MAIN);
+        
         lv_obj_set_style_text_color(id(wind_condtion_chip_label), label_color, LV_PART_MAIN);
-        lv_obj_set_style_text_color(id(wind_speed_unit), label_color, LV_PART_MAIN);
 
         // Force immediate redraw 
         lv_obj_invalidate(id(wind_condition_chip));
@@ -143,6 +143,17 @@ sensor:
                   id: aqi_chip
                   bg_color: !lambda 'return get_aqi_bg_color((float)x);'
                   shadow_color: !lambda 'return get_aqi_bg_color((float)x);'
+              - if:
+                  condition:
+                    lambda: 'return x >= 300;'
+                  then:
+                    - lvgl.label.update:
+                        id: aqi_number
+                        text_color: !lambda 'return my_colors::text_light_gray;'
+                  else:
+                    - lvgl.label.update:
+                        id: aqi_number
+                        text_color: !lambda 'return my_colors::text_dark_gray;'
             else:
               - lvgl.label.update:
                   id: aqi_number
@@ -203,9 +214,11 @@ sensor:
     attribute: wind_speed
     on_value:
       then:
-        lvgl.label.update:
-          id: wind_speed_label
-          text: !lambda 'return to_string((int)x);'
+        - lvgl.label.update:
+            id: wind_speed_label
+            text: !lambda 'return to_string((int)x);'
+        - script.execute: update_wind_color
+
 
   # wind bearing forecast
   # TODO: hook this up to something
@@ -224,9 +237,10 @@ sensor:
     attribute: wind_gust
     on_value:
       then:
-        lvgl.label.update:
-          id: wind_gust_label
-          text: !lambda 'return "Gust " + to_string((int)x);'
+        - lvgl.label.update:
+            id: wind_gust_label
+            text: !lambda 'return "Gust " + to_string((int)x);'
+        - script.execute: update_wind_color
   
   # todays high or low
   # TODO: guard against unavailable
@@ -364,7 +378,7 @@ text_sensor:
     id: conditions_today
     entity_id: sensor.nws_now_forecast
     internal: true
-    attribute: condition
+    attribute: condition_icon_token
     on_raw_value:
       then:
         if:
@@ -373,38 +387,55 @@ text_sensor:
           then:
             lvgl.label.update:
               id: days_condition_icon
+              # FIXME: forecast_is_daytime not evaluating correctly
               text: !lambda |-
-                  if (id(conditions_today).state == "sunny") {
+                if (x.find("wind") != std::string::npos) {
+                  return "\U000F059D";
+                } else if (x == "skc") {
+                  if (id(forecast_is_daytime).state) {
                     return "\U000F0599";
-                  } else if (id(conditions_today).state == "clear-night") {
-                      return "\U000F0594";
-                  } else if (id(conditions_today).state == "cloudy") {
-                      return "\U000F0590";
-                  } else if (id(conditions_today).state == "exceptional") {
-                      return "\U000F00C5";
-                  } else if (id(conditions_today).state == "fog") {
-                      return "\U000F0591";
-                  } else if (id(conditions_today).state == "hail") {
-                      return "\U000F0576";
-                  } else if (id(conditions_today).state == "lightning") {
-                      return "\U000F0593";
-                  } else if (id(conditions_today).state == "lightning-rainy") {
-                      return "\U000F0593";
-                  } else if (id(conditions_today).state == "partlycloudy") {
-                      return "\U000F0595";
-                  } else if (id(conditions_today).state == "pouring") {
-                      return "\U000F0576";
-                  } else if (id(conditions_today).state == "rainy") {
-                      return "\U000F0597";
-                  } else if (id(conditions_today).state == "snowy") {
-                      return "\U000F0598";
-                  } else if (id(conditions_today).state == "snowy-rainy") {
-                      return "\U000F0598";
-                  } else if (id(conditions_today).state == "windy") {
-                      return "\U000F059D";
-                  } else if (id(conditions_today).state == "windy-variant") {
-                      return "\U000F059D";
-                  } else { return "\U000F02D7"; };
+                  } else {
+                    return "\U000F0594";
+                  }
+                } else if (x == "few") {
+                  if (id(forecast_is_daytime).state) {
+                    return "\U000F0599";
+                  } else {
+                    return "\U000F0594";
+                  }
+                } else if (x == "sct") {
+                    return "\U000F0595";
+                } else if (x == "bkn") {
+                    return "\U000F0590";
+                } else if (x == "ovc") {
+                    return "\U000F0590";
+                } else if (x == "rain") {
+                    return "\U000F0597";
+                } else if (x == "rain_showers") {
+                    return "\U000F0597";
+                } else if (x == "tsra") {
+                    return "\U000F0593";
+                } else if (x == "snow") {
+                    return "\U000F0598";
+                } else if (x == "fzra") {
+                    return "\U000F0598";
+                } else if (x == "sleet") {
+                    return "\U000F0598";
+                } else if (x == "rain_sleet") {
+                    return "\U000F0598";
+                } else if (x == "snow_sleet") {
+                    return "\U000F0598";
+                } else if (x == "fog") {
+                    return "\U000F0591";
+                } else if (x == "haze") {
+                    return "\U000F0591";
+                } else if (x == "smoke") {
+                    return "\U000F0591";
+                } else if (x == "blizzard") {
+                    return "\U000F0598";
+                } else { 
+                  return "\U000F02D7";
+                };
           else:
             lvgl.label.update:
               id: days_condition_icon
