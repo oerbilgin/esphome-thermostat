@@ -126,8 +126,13 @@ script:
             color = my_colors::text_dark_blue;
           }
         } else if (x == "sct") { // scattered clouds / partly cloudy
+          if (id(forecast_is_daytime).state) {
             icon = "\U000F0595"; // partly cloudy
             color = my_colors::text_yellow;
+          } else {
+            icon = "\U000F0F31"; // cloudy night
+            color = my_colors::text_dark_blue;
+          }
         } else if (x == "bkn") { // broken clouds / mostly cloudy
             icon = "\U000F0590"; // cloudy
             color = my_colors::text_dark_gray;
@@ -138,7 +143,7 @@ script:
             icon = "\U000F0597"; // rainy
             color = my_colors::text_dark_blue;
         } else if (x == "rain_showers") { // rain
-            icon = "\U000F0597"; // rainy
+            icon = "\U000F0596"; // rain showers
             color = my_colors::text_dark_blue;
         } else if (x == "tsra") { // thunderstorms
             icon = "\U000F0593"; // lightning cloud
@@ -150,22 +155,22 @@ script:
             icon = "\U000F0598"; // snowy cloud
             color = my_colors::text_light_blue;
         } else if (x == "sleet") { // sleet
-            icon = "\U000F0598"; // snowy cloud
+            icon = "\U000F0592"; // hail
             color = my_colors::text_light_blue;
         } else if (x == "rain_sleet") { // rain and sleet
-            icon = "\U000F0598"; // snowy cloud
+            icon = "\U000F0592"; // hail
             color = my_colors::text_light_blue;
         } else if (x == "snow_sleet") { // snow and sleet
-            icon = "\U000F0598"; // snowy cloud
+            icon = "\U000F0592"; // shail
             color = my_colors::text_light_blue;
         } else if (x == "fog") { // fog
             icon = "\U000F0591"; // foggy
             color = my_colors::text_dark_gray;
         } else if (x == "haze") { // haze
-            icon = "\U000F0591";  // foggy
+            icon = "\U000F0F30";  // hazy
             color = my_colors::text_dark_gray;
         } else if (x == "smoke") { // smoky
-            icon = "\U000F0591"; // foggy
+            icon = "\U000F1799"; // smoky
             color = my_colors::text_dark_gray;
         } else if (x == "blizzard") { // blizzard
             icon = "\U000F0598"; // snowy cloud
@@ -432,15 +437,21 @@ text_sensor:
                 - lvgl.label.update:
                     id: next_rain_day
                     text: "Dry"
-                    text_color: !lambda 'return my_colors::text_yellow;'
+                    text_color: !lambda 'return my_colors::text_green;'
+                - lvgl.label.update:
+                    id: next_rain_probability_label
+                    text_color: !lambda 'return my_colors::text_green;'
                 - lvgl.widget.update:
                     id: next_rain_chip
-                    bg_color: !lambda 'return my_colors::bg_yellow;'
-                    shadow_color: !lambda 'return my_colors::bg_yellow;'
+                    bg_color: !lambda 'return my_colors::bg_green;'
+                    shadow_color: !lambda 'return my_colors::bg_green;'
               else:
                 - lvgl.label.update:
                     id: next_rain_day
                     text: !lambda 'return x.substr(0, 3);'
+                    text_color: !lambda 'return my_colors::text_dark_blue;'
+                - lvgl.label.update:
+                    id: next_rain_probability_label
                     text_color: !lambda 'return my_colors::text_dark_blue;'
                 - lvgl.widget.update:
                     id: next_rain_chip
@@ -483,8 +494,23 @@ font:
   - file:
       url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
       type: web
+    id: mdi_icons_30
+    size: 30
+    bpp: 8
+    glyphs: [
+      "\U000F00B5",  # Blur
+      "\U000F050F",  # Thermometer
+      "\U000F0E03",  # Thermometer Up
+      "\U000F0E02",  # Thermometer Down
+      "\U000F0E01",  # Thermometer Alert
+      "\U000F0F29",  # Snowflake Alert
+    ]
+  - file:
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
+      type: web
     id: mdi_icons_34
     size: 34
+    bpp: 8
     glyphs: [
       "\U000F0210",  # Fan
     ]
@@ -493,24 +519,30 @@ font:
       type: web
     id: mdi_icons_48
     size: 48
+    bpp: 8
     glyphs: [
       "\U000F0717",  # Snowflake
       "\U000F0238",  # Fire
       "\U000F0210",  # Fan
-      "\U000F0393",  # Thermostat
-      "\U000F059D",  # Windy
-      "\U000F0595",  # Partly Cloudy
-      "\U000F0599",  # Sunny
-      "\U000F0597",  # Rainy
-      "\U000F0590",  # Cloudy
-      "\U000F0593",  # Lightning
-      "\U000F0594",  # Night
-      "\U000F0598",  # Snowy
-      "\U000F0591",  # Foggy
-      "\U000F0576",  # Umbrella
+      "\U000F1B17",  # Thermostat Auto
+      "\U000F059D",  # Weather Windy
+      "\U000F0595",  # Weather Partly Cloudy
+      "\U000F0599",  # Weather Sunny
+      "\U000F0597",  # Weather Rainy
+      "\U000F0590",  # Weather Cloudy
+      "\U000F0593",  # Weather Lightning
+      "\U000F0594",  # Weather Night
+      "\U000F0598",  # Weather Snowy
+      "\U000F0591",  # Weather Foggy
+      "\U000F0576",  # Weather Umbrella
       "\U000F00C5",  # Bell Ring
       "\U000F0349",  # Search
       "\U000F02D7",  # Help
+      "\U000F0596",  # Weather Pouring
+      "\U000F0F30",  # Weather Hazy
+      "\U000F0592",  # Weather Hail
+      "\U000F0F31",  # Weather Night Part Cloud
+      "\U000F1799",  # Weather Smoke
     ]
 
 lvgl:
@@ -568,7 +600,7 @@ lvgl:
                           checked: false
                     - lvgl.label.update:
                         id: hvac_mode_label
-                        text: "Cool"
+                        text: "Cool Setpoint"
                     - lvgl.label.update:
                         id: setpoint_number
                         text: !lambda 'return to_string((int)id(setpoint_value).state) + "°F";'
@@ -626,7 +658,7 @@ lvgl:
                           checked: false
                     - lvgl.label.update:
                         id: hvac_mode_label
-                        text: "Heat"
+                        text: "Heat Setpoint"
                     - lvgl.label.update:
                         id: setpoint_number
                         text: !lambda 'return to_string((int)id(setpoint_value).state) + "°F";'
@@ -1253,9 +1285,9 @@ lvgl:
                   text_font: montserrat_34
               - label:
                   id: hvac_mode_label
-                  x: 162
+                  x: 147
                   y: 125
-                  width: 75
+                  width: 100
                   height: 20
                   text: ""
                   text_color: 0x6B7280
@@ -1335,7 +1367,7 @@ lvgl:
                   width: 75
                   height: 25
                   align: BOTTOM_MID
-                  text: "Current"
+                  text: "Inside"
                   text_color: 0x000000
                   text_align: CENTER
                   text_font: montserrat_16
@@ -1443,9 +1475,10 @@ lvgl:
               - label:
                   id: outside_temp_number
                   x: 0
-                  y: 10
+                  y: 0
                   width: 110
                   height: 40
+                  align: CENTER
                   text: "---"
                   text_color: chip_label_color_dark
                   text_align: CENTER
@@ -1453,13 +1486,24 @@ lvgl:
               - label:
                   id: outside_temp_label
                   x: 5
-                  y: 70
+                  y: 8
                   width: 100
                   height: 30
                   text: "Outside"
                   text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
+              - label:
+                  id: outside_temp_icon
+                  x: 0
+                  y: 0
+                  width: 30
+                  height: 30
+                  align: BOTTOM_MID
+                  text: "\U000F050F"
+                  text_font: mdi_icons_30
+                  text_align: CENTER
+                  text_color: chip_label_color_dark
 
         - button:
             id: up_button
@@ -1532,7 +1576,8 @@ lvgl:
               - label:
                   id: aqi_number
                   x: 0
-                  y: 10
+                  y: 0
+                  align: CENTER
                   width: 110
                   height: 40
                   text: "--"
@@ -1542,13 +1587,24 @@ lvgl:
               - label:
                   id: aqi_label
                   x: 5
-                  y: 70
+                  y: 8
                   width: 100
                   height: 30
                   text: "AQI"
                   text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
+              - label:
+                  id: aqi_icon
+                  x: 0
+                  y: 0
+                  width: 30
+                  height: 30
+                  align: BOTTOM_MID
+                  text: "\U000F00B5"
+                  text_font: mdi_icons_30
+                  text_align: CENTER
+                  text_color: chip_label_color_dark
 
         - obj:
             id: days_low_chip
@@ -1569,7 +1625,8 @@ lvgl:
               - label:
                   id: days_low_number
                   x: 0
-                  y: 10
+                  y: 0
+                  align: CENTER
                   width: 110
                   height: 40
                   text: "---"
@@ -1579,13 +1636,24 @@ lvgl:
               - label:
                   id: days_low_label
                   x: 5
-                  y: 70
+                  y: 8
                   width: 100
                   height: 30
-                  text: "\uF078 Low"
+                  text: "Low"
                   text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
+              - label:
+                  id: days_low_icon
+                  x: 0
+                  y: 0
+                  width: 30
+                  height: 30
+                  align: BOTTOM_MID
+                  text: "\U000F0E02"
+                  text_font: mdi_icons_30
+                  text_align: CENTER
+                  text_color: chip_label_color_dark
 
         - obj:
             id: days_high_chip
@@ -1606,7 +1674,8 @@ lvgl:
               - label:
                   id: days_high_number
                   x: 0
-                  y: 10
+                  y: 0
+                  align: CENTER
                   width: 110
                   height: 40
                   text: "---"
@@ -1616,13 +1685,24 @@ lvgl:
               - label:
                   id: days_high_label
                   x: 5
-                  y: 70
+                  y: 8
                   width: 100
                   height: 30
-                  text: "\uF077 High"
+                  text: "High"
                   text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
+              - label:
+                  id: days_high_icon
+                  x: 0
+                  y: 0
+                  width: 30
+                  height: 30
+                  align: BOTTOM_MID
+                  text: "\U000F0E03"
+                  text_font: mdi_icons_30
+                  text_align: CENTER
+                  text_color: chip_label_color_dark
 
         - label:
             id: next_hvac_mode
@@ -1657,7 +1737,7 @@ lvgl:
               - label:
                   id: wind_gust_label
                   x: 5
-                  y: 54
+                  y: 80
                   width: 100
                   height: 30
                   text: "Gust --"
@@ -1667,7 +1747,7 @@ lvgl:
               - label:
                   id: wind_condtion_chip_label
                   x: 5
-                  y: 80
+                  y: 8
                   width: 100
                   height: 30
                   text: "Wind"
@@ -1677,7 +1757,8 @@ lvgl:
               - label:
                   id: wind_speed_label
                   x: 0
-                  y: 10
+                  y: 0
+                  align: LEFT_MID
                   width: 65
                   height: 40
                   text: "--"
@@ -1687,7 +1768,7 @@ lvgl:
               - label:
                   id: wind_speed_unit
                   x: 55
-                  y: 26
+                  y: 51
                   width: 50
                   height: 24
                   text: "mph"
@@ -1714,7 +1795,8 @@ lvgl:
               - label:
                   id: next_rain_day
                   x: 0
-                  y: 3
+                  y: 0
+                  align: CENTER
                   width: 110
                   height: 48
                   text: "---"
@@ -1724,7 +1806,7 @@ lvgl:
               - label:
                   id: next_rain_probability_label
                   x: 6
-                  y: 51
+                  y: 80
                   width: 100
                   height: 30
                   text: "---"
@@ -1734,7 +1816,7 @@ lvgl:
               - label:
                   id: next_rain_label
                   x: 5
-                  y: 76
+                  y: 8
                   width: 100
                   height: 30
                   text: "Next Rain"
