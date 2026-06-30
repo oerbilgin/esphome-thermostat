@@ -1,6 +1,7 @@
 esphome:
   includes:
     - modules/lvgl_helpers.h
+    - "<lvgl.h>"
 
 color:
   - id: chip_label_color_dark
@@ -70,6 +71,24 @@ globals:
     initial_value: '55' # cant substitute this for some reason, make sure it matches
 
 script:
+- id: update_temp_icon
+  mode: restart
+  parameters:
+    target_label: lv_obj_t*
+    temp: float
+    default_icon: string
+  then:
+    - lambda: |-
+        if (temp <= 34) {
+          lv_label_set_text(target_label, "\U000F0F29"); // snowflake alert
+        } else if (temp >= 95) {
+          lv_label_set_text(target_label, "\U000F0E01"); // thermometer alert
+        } else {
+          lv_label_set_text(target_label, default_icon.c_str()); // default
+        }
+
+
+
 - id: update_wind_color
   mode: restart # Restarts the script if called again quickly
   then:
@@ -224,6 +243,9 @@ sensor:
                   id: aqi_number
                   text: !lambda 'return to_string((int)x);'
                   text_color: !lambda 'return get_aqi_text_color((float)x);'
+              - lvgl.label.update:
+                  id: aqi_icon
+                  text_color: !lambda 'return get_aqi_text_color((float)x);'
               - lvgl.widget.update:
                   id: aqi_chip
                   bg_color: !lambda 'return get_aqi_bg_color((float)x);'
@@ -344,21 +366,37 @@ sensor:
               text: !lambda 'return to_string((int)x) + "°F";'
               text_color: !lambda 'return get_temp_text_color((float)x);'
           - lvgl.label.update:
+              id: days_high_icon
+              text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.label.update:
               id: days_high_label
-              text: "\uF077 High"
+              text: "High"
           - lvgl.widget.update:
               id: days_high_chip
               bg_color: !lambda 'return get_temp_bg_color((float)x);'
               shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+          - script.execute: 
+              id: update_temp_icon
+              temp: !lambda 'return x;'
+              target_label: !lambda return id(days_high_icon);
+              default_icon: "\U000F0E03" # thermometer up
         else:
           - lvgl.label.update:
               id: days_low_number
               text: !lambda 'return to_string((int)x) + "°F";'
               text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.label.update:
+              id: days_low_icon
+              text_color: !lambda 'return get_temp_text_color((float)x);'
           - lvgl.widget.update:
               id: days_low_chip
               bg_color: !lambda 'return get_temp_bg_color((float)x);'
               shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+          - script.execute: 
+              id: update_temp_icon
+              temp: !lambda 'return x;'
+              target_label: !lambda return id(days_low_icon);
+              default_icon: "\U000F0E02" # thermometer down
   
   # todays low or tomorrows high
   # TODO: guard against unavailable
@@ -376,23 +414,39 @@ sensor:
               id: days_low_number
               text: !lambda 'return to_string((int)x) + "°F";'
               text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.label.update:
+              id: days_low_icon
+              text_color: !lambda 'return get_temp_text_color((float)x);'
           - lvgl.widget.update:
               id: days_low_chip
               bg_color: !lambda 'return get_temp_bg_color((float)x);'
               shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+          - script.execute: 
+              id: update_temp_icon
+              temp: !lambda 'return x;'
+              target_label: !lambda return id(days_low_icon);
+              default_icon: "\U000F0E02" # thermometer down
               
         else:
           - lvgl.label.update:
               id: days_high_number
               text: !lambda 'return to_string((int)x) + "°F";'
               text_color: !lambda 'return get_temp_text_color((float)x);'
-          - lvgl.label.update: # TODO: maybe use a symbol?
+          - lvgl.label.update:
+              id: days_high_icon
+              text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.label.update:
               id: days_high_label
-              text: "\uF077 High \uF054"
+              text: "High"
           - lvgl.widget.update:
               id: days_high_chip
               bg_color: !lambda 'return get_temp_bg_color((float)x);'
               shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+          - script.execute: 
+              id: update_temp_icon
+              temp: !lambda 'return x;'
+              target_label: !lambda return id(days_high_icon);
+              default_icon: "\U000F0E03" # thermometer up
   
   # outside temp
   - platform: homeassistant
@@ -409,6 +463,14 @@ sensor:
             id: outside_temp_chip
             bg_color: !lambda 'return get_temp_bg_color((float)x);'
             shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+        - lvgl.label.update:
+            id: outside_temp_icon
+            text_color: !lambda 'return get_temp_text_color((float)x);'
+        - script.execute: 
+            id: update_temp_icon
+            temp: !lambda 'return x;'
+            target_label: !lambda return id(outside_temp_icon);
+            default_icon: "\U000F050F" # thermometer
     
 binary_sensor:
   # use to order the temp chips
@@ -577,14 +639,16 @@ lvgl:
             widgets:
               - button:
                   id: cool_mode_button
-                  x: 0
+                  x: 250
                   y: 3
                   width: 69
                   height: 85
-                  bg_color: 0xE5E7EB
+                  bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   checkable: true
+                  checked:
+                    bg_color: !lambda 'return my_colors::arc_cool_knob;'
                   on_click:
                     - lvgl.widget.update:
                         id: cool_mode_button
@@ -632,17 +696,19 @@ lvgl:
                         text: "\U000F0717"
                         text_font: mdi_icons_48
                         text_align: CENTER
-                        text_color: 0x1F2937
+                        text_color: !lambda 'return my_colors::main_text_color;'
               - button:
                   id: heat_mode_button
                   x: 83
                   y: 3
                   width: 69
                   height: 85
-                  bg_color: 0xE5E7EB
+                  bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   checkable: true
+                  checked:
+                    bg_color: !lambda 'return my_colors::arc_heat_knob;'
                   on_click:
                     - lvgl.widget.update:
                         id: heat_mode_button
@@ -690,17 +756,19 @@ lvgl:
                         text: "\U000F0238"
                         text_font: mdi_icons_48
                         text_align: CENTER
-                        text_color: 0x1F2937
+                        text_color: !lambda 'return my_colors::main_text_color;'
               - button:
                   id: fan_mode_button
                   x: 166
                   y: 3
                   width: 69
                   height: 85
-                  bg_color: 0xE5E7EB
+                  bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   checkable: true
+                  checked:
+                    bg_color: !lambda 'return my_colors::arc_fan_knob;'
                   on_click:
                     - lvgl.widget.update:
                         id: fan_mode_button
@@ -744,16 +812,16 @@ lvgl:
                         text: "\U000F0210"
                         text_font: mdi_icons_48
                         text_align: CENTER
-                        text_color: 0x1F2937
+                        text_color: !lambda 'return my_colors::main_text_color;'
               - button:
                   id: auto_mode_button
-                  x: 250
+                  x: 0
                   y: 3
                   width: 69
                   height: 85
-                  bg_color: 0xE5E7EB
+                  bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   # FIXME: auto mode is disabled for now
                   hidden: true
                   # checkable: true 
@@ -797,17 +865,19 @@ lvgl:
                         text: "\U000F0393"
                         text_font: mdi_icons_48
                         text_align: CENTER
-                        text_color: 0x1F2937
+                        text_color: !lambda 'return my_colors::main_text_color;'
               - button:
                   id: off_mode_button
                   x: 331
                   y: 3
                   width: 69
                   height: 85
-                  bg_color: 0xE5E7EB
+                  bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   checkable: true
+                  checked:
+                    bg_color: 0x919191
                   state:
                     checked: true
                   on_click:
@@ -861,7 +931,7 @@ lvgl:
                         text: "\uF011"
                         text_font: montserrat_48
                         text_align: CENTER
-                        text_color: 0x1F2937
+                        text_color: !lambda 'return my_colors::main_text_color;'
 
         - label:
             id: todays_date
@@ -918,16 +988,16 @@ lvgl:
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0xDC2626
+                    arc_color: !lambda 'return my_colors::arc_heat_inidcator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
                   knob:
-                    bg_color: 0xF87171
+                    bg_color: !lambda 'return my_colors::arc_heat_knob;'
                     radius: 9999
                     pad_all: $thermostat_actual_knob_size
                     border_width: 2
-                    border_color: 0xB91C1C
+                    border_color: !lambda 'return my_colors::arc_heat_knob_border;'
                   bg_opa: 0%
 
         - obj:
@@ -1136,16 +1206,16 @@ lvgl:
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0x0284C7
+                    arc_color: !lambda 'return my_colors::arc_cool_inidcator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
                   knob:
-                    bg_color: 0x38BDF8
+                    bg_color: !lambda 'return my_colors::arc_cool_knob;'
                     radius: 9999
                     pad_all: $thermostat_actual_knob_size
                     border_width: 2
-                    border_color: 0x0C4A6E
+                    border_color: !lambda 'return my_colors::arc_cool_knob_border;'
                   bg_opa: 0%
               
         - obj:
@@ -1235,7 +1305,7 @@ lvgl:
                   y: $thermostat_arc_y_pos
                   width: 400
                   height: 400
-                  value: 100
+                  value: $thermostat_arc_max_value
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
                   adjustable: false
@@ -1246,16 +1316,16 @@ lvgl:
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0x0369A1
+                    arc_color: !lambda 'return my_colors::arc_fan_indicator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
-                  knob:
-                    bg_color: 0x7DD3FC
-                    radius: 9999
-                    pad_all: $thermostat_actual_knob_size
-                    border_width: 2
-                    border_color: 0x0369A1
+                  # knob: # dont need this since its not adjustable? dont need to confuse things
+                  #   bg_color: 0x7DD3FC
+                  #   radius: 9999
+                  #   pad_all: $thermostat_actual_knob_size
+                  #   border_width: 2
+                  #   border_color: 0x0369A1
                   bg_opa: 0%
 
         - obj:
@@ -1417,7 +1487,7 @@ lvgl:
                   border_width: 1
                   border_color: 0xD1D5DB
                   radius: 12
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_font: montserrat_18
                   pad_left: 40
               - label:
@@ -1430,7 +1500,7 @@ lvgl:
                   text: "\U000F0210"
                   text_font: mdi_icons_34
                   text_align: CENTER
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
 
         - button:
             id: turbo_button
@@ -1438,9 +1508,9 @@ lvgl:
             y: 386
             width: 69
             height: 85
-            bg_color: 0xE5E7EB
+            bg_color: !lambda 'return my_colors::button_bg_color;'
             radius: 120
-            text_color: 0x1F2937
+            text_color: !lambda 'return my_colors::main_text_color;'
             hidden: true
             checkable: true
             widgets:
@@ -1454,7 +1524,7 @@ lvgl:
                   text: "\U000F059D"
                   text_font: mdi_icons_48
                   text_align: CENTER
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
 
         - obj:
             id: outside_temp_chip
@@ -1496,7 +1566,7 @@ lvgl:
               - label:
                   id: outside_temp_icon
                   x: 0
-                  y: 0
+                  y: -3
                   width: 30
                   height: 30
                   align: BOTTOM_MID
@@ -1511,9 +1581,9 @@ lvgl:
             y: 90
             width: 86
             height: 100
-            bg_color: 0xE5E7EB
+            bg_color: !lambda 'return my_colors::button_bg_color;'
             radius: 120
-            text_color: 0x1F2937
+            text_color: !lambda 'return my_colors::main_text_color;'
             on_click:
               - number.increment:
                   id: setpoint_value
@@ -1529,7 +1599,7 @@ lvgl:
                   text: "\uF077"
                   text_font: montserrat_48
                   text_align: CENTER
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
 
         - button:
             id: down_button
@@ -1537,9 +1607,9 @@ lvgl:
             y: 229
             width: 86
             height: 100
-            bg_color: 0xE5E7EB
+            bg_color: !lambda 'return my_colors::button_bg_color;'
             radius: 120
-            text_color: 0x1F2937
+            text_color: !lambda 'return my_colors::main_text_color;'
             on_click:
               - number.decrement:
                   id: setpoint_value
@@ -1555,7 +1625,7 @@ lvgl:
                   text: "\uF078"
                   text_font: montserrat_48
                   text_align: CENTER
-                  text_color: 0x1F2937
+                  text_color: !lambda 'return my_colors::main_text_color;'
 
         - obj:
             id: aqi_chip
@@ -1597,7 +1667,7 @@ lvgl:
               - label:
                   id: aqi_icon
                   x: 0
-                  y: 0
+                  y: -3
                   width: 30
                   height: 30
                   align: BOTTOM_MID
@@ -1646,7 +1716,7 @@ lvgl:
               - label:
                   id: days_low_icon
                   x: 0
-                  y: 0
+                  y: -3
                   width: 30
                   height: 30
                   align: BOTTOM_MID
@@ -1695,7 +1765,7 @@ lvgl:
               - label:
                   id: days_high_icon
                   x: 0
-                  y: 0
+                  y: -3
                   width: 30
                   height: 30
                   align: BOTTOM_MID
@@ -1711,7 +1781,7 @@ lvgl:
             width: 300
             height: 24
             text: "Change to 60 at 8:00pm"
-            text_color: 0x000000
+            text_color: !lambda 'return my_colors::main_text_color;'
             hidden: true
             text_align: CENTER
             text_font: montserrat_18

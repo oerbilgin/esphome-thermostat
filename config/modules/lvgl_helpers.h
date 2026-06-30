@@ -2,9 +2,28 @@
 #include "esphome.h"
 
 namespace my_colors {
+    // base colors
+    lv_color_t main_text_color = lv_color_hex(0x1F2937);
+
     lv_color_t text_dark_gray = lv_color_hex(0x6B7280);
     lv_color_t text_light_gray = lv_color_hex(0xC3C4C6);
 
+    // thermostats and buttons
+    lv_color_t button_bg_color = lv_color_hex(0xE5E7EB); // also use this for arc background
+
+    lv_color_t arc_cool_inidcator = lv_color_hex(0x3a6b88);
+    lv_color_t arc_cool_knob = lv_color_hex(0x74a6c3);
+    lv_color_t arc_cool_knob_border = lv_color_hex(0x0f4667);
+
+    lv_color_t arc_heat_inidcator = lv_color_hex(0xc85a32);
+    lv_color_t arc_heat_knob = lv_color_hex(0xe19d84);
+    lv_color_t arc_heat_knob_border = lv_color_hex(0x88381b);
+
+    lv_color_t arc_fan_indicator = lv_color_hex(0x61A15C);
+    lv_color_t arc_fan_knob = lv_color_hex(0xADCFAB); // there is no knob, but we use it for the button background
+    lv_color_t arc_fan_knob_border = lv_color_hex(0x22721D); // there is no knob, but in case we want one for later
+
+    // data cards
     lv_color_t bg_blue_green = lv_color_hex(0xCFF0F8);
     lv_color_t bg_dark_blue = lv_color_hex(0xCEDDF8);
     lv_color_t bg_light_blue = lv_color_hex(0xCFF0F8);
