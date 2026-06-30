@@ -3,19 +3,26 @@
 
 namespace my_colors {
     // base colors
+    lv_color_t main_background_color = lv_color_hex(0xE6E1D1);
+    lv_color_t dimmer_color = lv_color_hex(0x4B5563);
     lv_color_t main_text_color = lv_color_hex(0x1F2937);
 
     lv_color_t text_dark_gray = lv_color_hex(0x6B7280);
     lv_color_t text_light_gray = lv_color_hex(0xC3C4C6);
 
     // thermostats and buttons
-    lv_color_t button_bg_color = lv_color_hex(0xE5E7EB); // also use this for arc background
+    lv_color_t button_bg_color = lv_color_hex(0xE5E7EB);
+    lv_color_t off_button_checked = lv_color_hex(0x919191);
 
-    lv_color_t arc_cool_inidcator = lv_color_hex(0x3a6b88);
+    lv_color_t setpoint_knob = lv_color_hex(0xABABAB);
+    lv_color_t setpoint_knob_border = lv_color_hex(0x1F2937);
+
+    lv_color_t arc_bg_color = lv_color_hex(0xE5E7EB);
+    lv_color_t arc_cool_indicator = lv_color_hex(0x3a6b88);
     lv_color_t arc_cool_knob = lv_color_hex(0x74a6c3);
     lv_color_t arc_cool_knob_border = lv_color_hex(0x0f4667);
 
-    lv_color_t arc_heat_inidcator = lv_color_hex(0xc85a32);
+    lv_color_t arc_heat_indicator = lv_color_hex(0xc85a32);
     lv_color_t arc_heat_knob = lv_color_hex(0xe19d84);
     lv_color_t arc_heat_knob_border = lv_color_hex(0x88381b);
 

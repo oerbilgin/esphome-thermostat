@@ -3,48 +3,6 @@ esphome:
     - modules/lvgl_helpers.h
     - "<lvgl.h>"
 
-color:
-  - id: chip_label_color_dark
-    hex: 6B7280
-  - id: chip_label_color_light
-    hex: C3C4C6
-  - id: chip_bg_color_red
-    hex: FEE2E2
-  - id: chip_text_color_red
-    hex: DC2626
-  - id: chip_bg_color_green
-    hex: DCFCE7
-  - id: chip_text_color_green
-    hex: 16A34A
-  - id: chip_bg_color_purple
-    hex: FCE1FE
-  - id: chip_text_color_purple
-    hex: A928DC
-  - id: chip_bg_color_maroon
-    hex: CF7D88
-  - id: chip_text_color_maroon
-    hex: AC2A44
-  - id: chip_bg_color_orange
-    hex: FEDCC8
-  - id: chip_text_color_orange
-    hex: C86604
-  - id: chip_bg_color_yellow
-    hex: FEF3C7
-  - id: chip_text_color_yellow
-    hex: CA8A04
-  - id: chip_bg_color_ice_blue
-    hex: CEF7F8
-  - id: chip_text_color_ice_blue
-    hex: 11A6A6
-  - id: chip_bg_color_light_blue
-    hex: CFF0F8
-  - id: chip_text_color_light_blue
-    hex: 0369A1
-  - id: chip_bg_color_dark_blue
-    hex: CEDDF8
-  - id: chip_text_color_dark_blue
-    hex: 3838E5
-
 json:
 
 substitutions:
@@ -265,15 +223,14 @@ sensor:
               - lvgl.label.update:
                   id: aqi_number
                   text: "err"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
               - lvgl.widget.update:
                   id: aqi_chip
-                  bg_color: chip_label_color_light
-                  shadow_color: chip_label_color_light
+                  bg_color: !lambda 'return my_colors::text_light_gray;'
+                  shadow_color: !lambda 'return my_colors::text_light_gray;'
 
   
   # Inside house temp
-  # TODO: make logic for which inside temp to use based on availability, or do this directly in HASS
   - platform: homeassistant
     id: average_house_temperature
     entity_id: sensor.average_house_temperature
@@ -329,12 +286,11 @@ sensor:
 
   # wind bearing forecast
   # TODO: hook this up to something
-  - platform: homeassistant
-    id: wind_bearing_today
-    entity_id: sensor.nws_now_forecast
-    internal: true
-    attribute: wind_bearing
-    # on_value: # TODO update wind chip TODO replace condition chip with wind chip
+  # - platform: homeassistant
+  #   id: wind_bearing_today
+  #   entity_id: sensor.nws_now_forecast
+  #   internal: true
+  #   attribute: wind_bearing
 
   # wind gust forecast
   - platform: homeassistant
@@ -618,7 +574,7 @@ lvgl:
 
   pages:
     - id: canvas_9
-      bg_color: 0xE6E1D1
+      bg_color: !lambda 'return my_colors::main_background_color;'
       bg_opa: 100%
       pad_all: 0
       scrollbar_mode: "OFF"
@@ -629,10 +585,9 @@ lvgl:
             y: 380
             width: 400
             height: 91
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
+            border_color: !lambda 'return my_colors::main_background_color;'
             radius: 8
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -877,7 +832,7 @@ lvgl:
                   text_color: !lambda 'return my_colors::main_text_color;'
                   checkable: true
                   checked:
-                    bg_color: 0x919191
+                    bg_color: !lambda 'return my_colors::off_button_checked;'
                   state:
                     checked: true
                   on_click:
@@ -940,7 +895,7 @@ lvgl:
             width: 370
             height: 30
             text: "Fetching date..."
-            text_color: 0x000000
+            text_color: !lambda 'return my_colors::main_text_color;'
             text_align: LEFT
             text_font: montserrat_24
 
@@ -951,7 +906,7 @@ lvgl:
             width: 370
             height: 30
             text: "Fetching time..."
-            text_color: 0x000000
+            text_color: !lambda 'return my_colors::main_text_color;'
             text_align: LEFT
             text_font: montserrat_24
         - obj:
@@ -961,10 +916,8 @@ lvgl:
             width: 400
             height: 400
             hidden: true
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
             border_opa: 0%
             radius: 8
             outline_opa: 0%
@@ -983,12 +936,12 @@ lvgl:
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
-                    arc_color: !lambda 'return my_colors::arc_heat_inidcator;'
+                    arc_color: !lambda 'return my_colors::arc_heat_indicator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
@@ -1007,10 +960,8 @@ lvgl:
             width: 400
             height: 400
             hidden: true
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
             border_opa: 0%
             radius: 8
             outline_opa: 0%
@@ -1029,21 +980,21 @@ lvgl:
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 0%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0xDC2626
+                    arc_color: !lambda 'return my_colors::arc_heat_indicator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: false
                   knob:
-                    bg_color: 0xF87171
+                    bg_color: !lambda 'return my_colors::arc_heat_knob;'
                     radius: 9999
                     pad_all: $thermostat_actual_knob_size
                     border_width: 2
-                    border_color: 0xB91C1C
+                    border_color: !lambda 'return my_colors::arc_heat_knob_border;'
                   bg_opa: 0%
               - label:
                   id: auto_cool_setpoint_number
@@ -1052,7 +1003,7 @@ lvgl:
                   width: 95
                   height: 60
                   text: "68"
-                  text_color: 0x000000
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_48
               - label:
@@ -1062,7 +1013,7 @@ lvgl:
                   width: 75
                   height: 25
                   text: "Cool"
-                  text_color: 0x000000
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_16
               - label:
@@ -1072,7 +1023,7 @@ lvgl:
                   width: 95
                   height: 60
                   text: "74"
-                  text_color: 0x000000
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_48
               - label:
@@ -1082,7 +1033,7 @@ lvgl:
                   width: 75
                   height: 25
                   text: "Heat"
-                  text_color: 0x000000
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_16
               - arc:
@@ -1098,77 +1049,21 @@ lvgl:
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 0%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0x0369A1
+                    arc_color: !lambda 'return my_colors::arc_cool_indicator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: false
                   knob:
-                    bg_color: 0x94A3B8
+                    bg_color: !lambda 'return my_colors::arc_cool_knob;'
                     radius: 9999
                     pad_all: $thermostat_actual_knob_size
                     border_width: 2
-                  bg_opa: 0%
-              - arc:
-                  id: auto_cool_arc_setpoint
-                  x: $thermostat_arc_x_pos
-                  y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
-                  value: 41
-                  min_value: $thermostat_arc_min_value
-                  max_value: $thermostat_arc_max_value
-                  adjustable: true
-                  start_angle: 135
-                  end_angle: 45
-                  arc_color: 0xD1D5DB
-                  arc_width: $thermostat_arc_width
-                  arc_opa: 0%
-                  arc_rounded: true
-                  indicator:
-                    arc_color: 0x6366F1
-                    arc_width: $thermostat_arc_width
-                    arc_opa: 100%
-                    arc_rounded: true
-                  knob:
-                    bg_color: 0xFAFAFA
-                    radius: 9999
-                    pad_all: $thermostat_setpoint_knob_size
-                    border_width: 2
-                    border_color: 0x6366F1
-                  bg_opa: 0%
-              - arc:
-                  id: auto_heat_arc_setpoint
-                  x: $thermostat_arc_x_pos
-                  y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
-                  value: 36
-                  min_value: $thermostat_arc_min_value
-                  max_value: $thermostat_arc_max_value
-                  adjustable: true
-                  start_angle: 135
-                  end_angle: 45
-                  mode: REVERSE
-                  arc_color: 0xD1D5DB
-                  arc_width: $thermostat_arc_width
-                  arc_opa: 0%
-                  arc_rounded: true
-                  indicator:
-                    arc_color: 0xEA580C
-                    arc_width: $thermostat_arc_width
-                    arc_opa: 100%
-                    arc_rounded: true
-                  knob:
-                    bg_color: 0xFAFAFA
-                    radius: 9999
-                    pad_all: $thermostat_setpoint_knob_size
-                    border_width: 2
-                    border_color: 0x6366F1
+                    border_color: !lambda 'return my_colors::arc_heat_knob_border;'
                   bg_opa: 0%
 
         - obj:
@@ -1178,10 +1073,8 @@ lvgl:
             width: 400
             height: 400
             hidden: true
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
             border_opa: 0%
             radius: 8
             outline_opa: 0%
@@ -1201,12 +1094,12 @@ lvgl:
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
-                    arc_color: !lambda 'return my_colors::arc_cool_inidcator;'
+                    arc_color: !lambda 'return my_colors::arc_cool_indicator;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
@@ -1224,10 +1117,8 @@ lvgl:
             y: $thermostat_y_pos
             width: 400
             height: 400
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 1
-            border_color: 0x4B5563
             border_opa: 0%
             radius: 8
             outline_opa: 0%
@@ -1246,21 +1137,15 @@ lvgl:
                   adjustable: false
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0xD1D5DB
+                    arc_color: !lambda 'return my_colors::arc_bg_color;'
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
-                  knob:
-                    bg_color: 0x7DD3FC
-                    radius: 9999
-                    pad_all: $thermostat_actual_knob_size
-                    border_width: 2
-                    border_color: 0x0369A1
                   bg_opa: 0%
         - obj:
             id: fan_mode_thermostat
@@ -1269,10 +1154,8 @@ lvgl:
             width: 400
             height: 400
             hidden: true
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 1
-            border_color: 0x4B5563
             border_opa: 0%
             radius: 8
             outline_opa: 0%
@@ -1287,7 +1170,7 @@ lvgl:
                   height: 45
                   text: "\U000F0210"
                   text_font: mdi_icons_48
-                  text_color: 0x6B7280
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
               - label:
                   id: fan_mode_label
@@ -1296,7 +1179,7 @@ lvgl:
                   width: 75
                   height: 20
                   text: "Fan"
-                  text_color: 0x6B7280
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_14
               - arc:
@@ -1311,7 +1194,7 @@ lvgl:
                   adjustable: false
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 100%
                   arc_rounded: true
@@ -1320,12 +1203,6 @@ lvgl:
                     arc_width: $thermostat_arc_width
                     arc_opa: 100%
                     arc_rounded: true
-                  # knob: # dont need this since its not adjustable? dont need to confuse things
-                  #   bg_color: 0x7DD3FC
-                  #   radius: 9999
-                  #   pad_all: $thermostat_actual_knob_size
-                  #   border_width: 2
-                  #   border_color: 0x0369A1
                   bg_opa: 0%
 
         - obj:
@@ -1334,10 +1211,9 @@ lvgl:
             y: $thermostat_y_pos
             width: 400
             height: 400
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
+            border_opa: 0%
             radius: 8
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1350,7 +1226,7 @@ lvgl:
                   width: 130
                   height: 45
                   text: "OFF"
-                  text_color: 0x6B7280
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_34
               - label:
@@ -1360,7 +1236,7 @@ lvgl:
                   width: 100
                   height: 20
                   text: ""
-                  text_color: 0x6B7280
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_14
               - arc:
@@ -1375,22 +1251,21 @@ lvgl:
                   adjustable: true
                   start_angle: 135
                   end_angle: 45
-                  arc_color: 0xD1D5DB
+                  arc_color: !lambda 'return my_colors::arc_bg_color;'
                   arc_width: $thermostat_arc_width
                   arc_opa: 0%
                   arc_rounded: true
                   indicator:
-                    arc_color: 0x6366F1
                     arc_width: $thermostat_arc_width
                     arc_opa: 0%
                     arc_rounded: true
                   knob:
-                    bg_color: 0xABABAB
+                    bg_color: !lambda 'return my_colors::setpoint_knob;'
                     bg_opa: 70%
                     radius: 9999
                     pad_all: $thermostat_setpoint_knob_size
                     border_width: 2
-                    border_color: 0x000000
+                    border_color: !lambda 'return my_colors::setpoint_knob_border;'
                     shadow_width: 10
                     shadow_opa: 50%
                   on_change:
@@ -1409,10 +1284,8 @@ lvgl:
             y: 170
             width: 160
             height: 80
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
             border_opa: 0%
             radius: 8
             outline_opa: 0%
@@ -1427,7 +1300,7 @@ lvgl:
                   height: 60
                   align: TOP_MID
                   text: "---"
-                  text_color: 0x000000
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_48
               - label:
@@ -1438,7 +1311,7 @@ lvgl:
                   height: 25
                   align: BOTTOM_MID
                   text: "Inside"
-                  text_color: 0x000000
+                  text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_16
 
@@ -1450,7 +1323,7 @@ lvgl:
             height: 40
             text: "Status"
             hidden: true
-            text_color: 0x000000
+            text_color: !lambda 'return my_colors::main_text_color;'
             text_align: CENTER
             text_font: montserrat_30
 
@@ -1460,10 +1333,8 @@ lvgl:
             y: 320
             width: 150
             height: 48
-            bg_color: 0x4F46E5
             bg_opa: 0%
             border_width: 0
-            border_color: 0x4B5563
             radius: 8
             pad_all: 0
             hidden: true
@@ -1483,9 +1354,9 @@ lvgl:
                     - "High"
                   selected_index: 0
                   dir: TOP
-                  bg_color: 0xE5E7EB
+                  bg_color: !lambda 'return my_colors::button_bg_color;'
                   border_width: 1
-                  border_color: 0xD1D5DB
+                  border_color: !lambda 'return my_colors::text_dark_gray;'
                   radius: 12
                   text_color: !lambda 'return my_colors::main_text_color;'
                   text_font: montserrat_18
@@ -1532,12 +1403,12 @@ lvgl:
             y: 224
             width: 110
             height: 110
-            bg_color: chip_label_color_light
+            bg_color: !lambda 'return my_colors::text_light_gray;'
             border_width: 0
-            border_color: 0xFCA5A5
+            border_opa: 0%
             radius: 8
             shadow_width: 15
-            shadow_color: chip_label_color_light
+            shadow_color: !lambda 'return my_colors::text_light_gray;'
             shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1550,7 +1421,7 @@ lvgl:
                   height: 40
                   align: CENTER
                   text: "---"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1560,7 +1431,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "Outside"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1573,7 +1444,7 @@ lvgl:
                   text: "\U000F050F"
                   text_font: mdi_icons_30
                   text_align: CENTER
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
 
         - button:
             id: up_button
@@ -1633,12 +1504,12 @@ lvgl:
             y: 224
             width: 110
             height: 110
-            bg_color: chip_label_color_light
+            bg_color: !lambda 'return my_colors::text_light_gray;'
             border_width: 0
-            border_color: 0x86EFAC
+            border_opa: 0%
             radius: 8
             shadow_width: 15
-            shadow_color: chip_label_color_light
+            shadow_color: !lambda 'return my_colors::text_light_gray;'
             shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1651,7 +1522,7 @@ lvgl:
                   width: 110
                   height: 40
                   text: "--"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1661,7 +1532,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "AQI"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1674,7 +1545,7 @@ lvgl:
                   text: "\U000F00B5"
                   text_font: mdi_icons_30
                   text_align: CENTER
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
 
         - obj:
             id: days_low_chip
@@ -1682,12 +1553,12 @@ lvgl:
             y: 85
             width: 110
             height: 110
-            bg_color: chip_label_color_light
+            bg_color: !lambda 'return my_colors::text_light_gray;'
             border_width: 0
-            border_color: 0x7DD3FC
+            border_opa: 0%
             radius: 8
             shadow_width: 15
-            shadow_color: chip_label_color_light
+            shadow_color: !lambda 'return my_colors::text_light_gray;'
             shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1700,7 +1571,7 @@ lvgl:
                   width: 110
                   height: 40
                   text: "---"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1710,7 +1581,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "Low"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1723,7 +1594,7 @@ lvgl:
                   text: "\U000F0E02"
                   text_font: mdi_icons_30
                   text_align: CENTER
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
 
         - obj:
             id: days_high_chip
@@ -1731,12 +1602,12 @@ lvgl:
             y: 85
             width: 110
             height: 110
-            bg_color: chip_label_color_light
+            bg_color: !lambda 'return my_colors::text_light_gray;'
             border_width: 0
-            border_color: 0xFCD34D
+            border_opa: 0%
             radius: 8
             shadow_width: 15
-            shadow_color: chip_label_color_light
+            shadow_color: !lambda 'return my_colors::text_light_gray;'
             shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1749,7 +1620,7 @@ lvgl:
                   width: 110
                   height: 40
                   text: "---"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1759,7 +1630,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "High"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1772,7 +1643,7 @@ lvgl:
                   text: "\U000F0E03"
                   text_font: mdi_icons_30
                   text_align: CENTER
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
 
         - label:
             id: next_hvac_mode
@@ -1792,14 +1663,12 @@ lvgl:
             y: 361
             width: 110
             height: 110
-            bg_color: chip_label_color_light
-            bg_grad_color: 0xFAFAFA
-            bg_grad_dir: VER
+            bg_color: !lambda 'return my_colors::text_light_gray;'
             border_width: 0
-            border_color: 0xFCD34D
+            border_opa: 0%
             radius: 8
             shadow_width: 15
-            shadow_color: chip_label_color_light
+            shadow_color: !lambda 'return my_colors::text_light_gray;'
             shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1811,7 +1680,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "Gust --"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1821,7 +1690,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "Wind"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1832,7 +1701,7 @@ lvgl:
                   width: 65
                   height: 40
                   text: "--"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1842,7 +1711,7 @@ lvgl:
                   width: 50
                   height: 24
                   text: "mph"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1852,12 +1721,12 @@ lvgl:
             y: 361
             width: 110
             height: 110
-            bg_color: chip_label_color_light
+            bg_color: !lambda 'return my_colors::text_light_gray;'
             border_width: 0
-            border_color: 0x7DD3FC
+            border_opa: 0%
             radius: 8
             shadow_width: 15
-            shadow_color: chip_label_color_light
+            shadow_color: !lambda 'return my_colors::text_light_gray;'
             shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
@@ -1870,7 +1739,7 @@ lvgl:
                   width: 110
                   height: 48
                   text: "---"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1880,7 +1749,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "---"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
@@ -1890,7 +1759,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "Next Rain"
-                  text_color: chip_label_color_dark
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1903,7 +1772,7 @@ lvgl:
             text: "\uF1EB"
             text_font: montserrat_32
             text_align: CENTER
-            text_color: 0x6B7280
+            text_color: !lambda 'return my_colors::text_dark_gray;'
         - label:
             id: hass_status_icon
             x: 711
@@ -1913,7 +1782,7 @@ lvgl:
             text: "\uF015"
             text_font: montserrat_32
             text_align: CENTER
-            text_color: 0x6B7280
+            text_color: !lambda 'return my_colors::text_dark_gray;'
         - label:
             id: days_condition_icon
             x: 15
@@ -1923,7 +1792,7 @@ lvgl:
             text: "\U000F0349"
             text_font: mdi_icons_48
             text_align: CENTER
-            text_color: 0xCA8A04
+            text_color: !lambda 'return my_colors::text_dark_gray;'
         # screen dimmer overlay - dims the screen after 30 seconds of inactivity, blocks touching
         - obj:
             id: screen_dimmer
@@ -1932,9 +1801,9 @@ lvgl:
             width: 800
             height: 480
             hidden: true
-            bg_color: 0x000000
+            bg_color: !lambda 'return my_colors::main_text_color;'
             border_width: 0
-            border_color: 0x4B5563
+            border_color: !lambda 'return my_colors::dimmer_color;'
             radius: 0
             opa: 50%
             pad_all: 0
