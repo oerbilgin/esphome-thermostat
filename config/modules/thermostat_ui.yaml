@@ -89,6 +89,7 @@ script:
         }
 
         lv_obj_set_style_bg_color(id(wind_condition_chip), bg_color, LV_PART_MAIN);
+        lv_obj_set_style_shadow_color(id(wind_condition_chip), bg_color, LV_PART_MAIN);
         lv_obj_set_style_text_color(id(wind_speed_label), text_color, LV_PART_MAIN);
         lv_obj_set_style_text_color(id(wind_speed_unit), text_color, LV_PART_MAIN);
         lv_obj_set_style_text_color(id(wind_gust_label), text_color, LV_PART_MAIN);
@@ -97,7 +98,86 @@ script:
 
         // Force immediate redraw 
         lv_obj_invalidate(id(wind_condition_chip));
+- id: update_condition_icon
+  mode: restart
+  then:
+    - lambda: |-
+        const char * icon;
+        lv_color_t color;
+        std::string x = id(conditions_today).state;
 
+        if (x.find("wind") != std::string::npos) {
+          icon = "\U000F059D";
+          color = my_colors::text_light_blue;
+        } else if (x == "skc") { // clear skies
+          if (id(forecast_is_daytime).state) {
+            icon = "\U000F0599"; // sunny
+            color = my_colors::text_yellow;
+          } else {
+            icon = "\U000F0594"; // clear night
+            color = my_colors::text_dark_blue;
+          }
+        } else if (x == "few") { // few clouds
+          if (id(forecast_is_daytime).state) {
+            icon = "\U000F0599"; // sunny
+            color = my_colors::text_yellow;
+          } else {
+            icon = "\U000F0594"; // clear night
+            color = my_colors::text_dark_blue;
+          }
+        } else if (x == "sct") { // scattered clouds / partly cloudy
+            icon = "\U000F0595"; // partly cloudy
+            color = my_colors::text_yellow;
+        } else if (x == "bkn") { // broken clouds / mostly cloudy
+            icon = "\U000F0590"; // cloudy
+            color = my_colors::text_dark_gray;
+        } else if (x == "ovc") { // overcast
+            icon = "\U000F0590"; // cloudy
+            color = my_colors::text_dark_gray;
+        } else if (x == "rain") { // rain / drizzle
+            icon = "\U000F0597"; // rainy
+            color = my_colors::text_dark_blue;
+        } else if (x == "rain_showers") { // rain
+            icon = "\U000F0597"; // rainy
+            color = my_colors::text_dark_blue;
+        } else if (x == "tsra") { // thunderstorms
+            icon = "\U000F0593"; // lightning cloud
+            color = my_colors::text_dark_blue;
+        } else if (x == "snow") { // snowing
+            icon = "\U000F0598"; // snowy cloud
+            color = my_colors::text_light_blue;
+        } else if (x == "fzra") { // freezing rain
+            icon = "\U000F0598"; // snowy cloud
+            color = my_colors::text_light_blue;
+        } else if (x == "sleet") { // sleet
+            icon = "\U000F0598"; // snowy cloud
+            color = my_colors::text_light_blue;
+        } else if (x == "rain_sleet") { // rain and sleet
+            icon = "\U000F0598"; // snowy cloud
+            color = my_colors::text_light_blue;
+        } else if (x == "snow_sleet") { // snow and sleet
+            icon = "\U000F0598"; // snowy cloud
+            color = my_colors::text_light_blue;
+        } else if (x == "fog") { // fog
+            icon = "\U000F0591"; // foggy
+            color = my_colors::text_dark_gray;
+        } else if (x == "haze") { // haze
+            icon = "\U000F0591";  // foggy
+            color = my_colors::text_dark_gray;
+        } else if (x == "smoke") { // smoky
+            icon = "\U000F0591"; // foggy
+            color = my_colors::text_dark_gray;
+        } else if (x == "blizzard") { // blizzard
+            icon = "\U000F0598"; // snowy cloud
+            color = my_colors::text_light_blue;
+        } else { 
+          icon = "\U000F02D7"; // question mark
+          color = my_colors::text_dark_gray;
+        };
+
+        lv_obj_set_style_text_color(id(days_condition_icon), color, LV_PART_MAIN);
+        lv_label_set_text(id(days_condition_icon), icon);
+        lv_obj_invalidate(id(days_condition_icon));
 
 number:
   - platform: template
@@ -148,11 +228,11 @@ sensor:
                     lambda: 'return x >= 300;'
                   then:
                     - lvgl.label.update:
-                        id: aqi_number
+                        id: aqi_label
                         text_color: !lambda 'return my_colors::text_light_gray;'
                   else:
                     - lvgl.label.update:
-                        id: aqi_number
+                        id: aqi_label
                         text_color: !lambda 'return my_colors::text_dark_gray;'
             else:
               - lvgl.label.update:
@@ -356,6 +436,7 @@ text_sensor:
                 - lvgl.widget.update:
                     id: next_rain_chip
                     bg_color: !lambda 'return my_colors::bg_yellow;'
+                    shadow_color: !lambda 'return my_colors::bg_yellow;'
               else:
                 - lvgl.label.update:
                     id: next_rain_day
@@ -364,6 +445,7 @@ text_sensor:
                 - lvgl.widget.update:
                     id: next_rain_chip
                     bg_color: !lambda 'return my_colors::bg_dark_blue;'
+                    shadow_color: !lambda 'return my_colors::bg_dark_blue;'
           else:
             - lvgl.label.update:
                 id: next_rain_day
@@ -372,6 +454,7 @@ text_sensor:
             - lvgl.widget.update:
                 id: next_rain_chip
                 bg_color: !lambda 'return my_colors::text_light_gray;'
+                shadow_color: !lambda 'return my_colors::text_light_gray;'
   
   # weather conditions
   - platform: homeassistant
@@ -385,62 +468,13 @@ text_sensor:
           condition:
             lambda: 'return id(conditions_today).has_state();'
           then:
-            lvgl.label.update:
-              id: days_condition_icon
-              # FIXME: forecast_is_daytime not evaluating correctly
-              text: !lambda |-
-                if (x.find("wind") != std::string::npos) {
-                  return "\U000F059D";
-                } else if (x == "skc") {
-                  if (id(forecast_is_daytime).state) {
-                    return "\U000F0599";
-                  } else {
-                    return "\U000F0594";
-                  }
-                } else if (x == "few") {
-                  if (id(forecast_is_daytime).state) {
-                    return "\U000F0599";
-                  } else {
-                    return "\U000F0594";
-                  }
-                } else if (x == "sct") {
-                    return "\U000F0595";
-                } else if (x == "bkn") {
-                    return "\U000F0590";
-                } else if (x == "ovc") {
-                    return "\U000F0590";
-                } else if (x == "rain") {
-                    return "\U000F0597";
-                } else if (x == "rain_showers") {
-                    return "\U000F0597";
-                } else if (x == "tsra") {
-                    return "\U000F0593";
-                } else if (x == "snow") {
-                    return "\U000F0598";
-                } else if (x == "fzra") {
-                    return "\U000F0598";
-                } else if (x == "sleet") {
-                    return "\U000F0598";
-                } else if (x == "rain_sleet") {
-                    return "\U000F0598";
-                } else if (x == "snow_sleet") {
-                    return "\U000F0598";
-                } else if (x == "fog") {
-                    return "\U000F0591";
-                } else if (x == "haze") {
-                    return "\U000F0591";
-                } else if (x == "smoke") {
-                    return "\U000F0591";
-                } else if (x == "blizzard") {
-                    return "\U000F0598";
-                } else { 
-                  return "\U000F02D7";
-                };
+            script.execute: update_condition_icon
           else:
             lvgl.label.update:
               id: days_condition_icon
               text: "err"
               text_font: montserrat_48
+              text_color: !lambda 'return my_colors::text_dark_gray;'
 
 
 # External icon fonts - auto-generated for icons used in this design

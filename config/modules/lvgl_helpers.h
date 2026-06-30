@@ -64,6 +64,7 @@ lv_color_t get_color_mix(float temp, size_t num_thresholds, const float threshol
 
 // Returns an LVGL color interpolated between your cool and hot bounds
 lv_color_t get_temp_bg_color(float temp) {
+    ESP_LOGD("get_temp_bg_color", "Input is %f", temp);
 
     const int NUM_STEPS = 6;
     float thresholds[NUM_STEPS] = {45.0f, 62.0f, 67.0f, 74.0f, 78.0f, 85.0f};
@@ -81,6 +82,7 @@ lv_color_t get_temp_bg_color(float temp) {
 }
 
 lv_color_t get_temp_text_color(float temp) {
+    ESP_LOGD("get_temp_text_color", "Input is %f", temp);
 
     const int NUM_STEPS = 6;
     float thresholds[NUM_STEPS] = {45.0f, 62.0f, 67.0f, 74.0f, 78.0f, 85.0f};
@@ -98,6 +100,7 @@ lv_color_t get_temp_text_color(float temp) {
 }
 
 lv_color_t get_aqi_text_color(float val) {
+    ESP_LOGD("get_aqi_text_color", "Input is %f", val);
 
     if (val < 50) {
         return my_colors::text_green;
@@ -115,6 +118,7 @@ lv_color_t get_aqi_text_color(float val) {
 }
 
 lv_color_t get_aqi_bg_color(float val) {
+    ESP_LOGD("get_aqi_bg_color", "Input is %f", val);
 
     if (val < 50) {
         return my_colors::bg_green;
@@ -132,6 +136,7 @@ lv_color_t get_aqi_bg_color(float val) {
 }
 
 lv_color_t get_wind_text_color(float val) {
+    ESP_LOGD("get_wind_text_color", "Input is %f", val);
 
     if (val < 3) {
         return my_colors::text_light_blue;
@@ -149,6 +154,7 @@ lv_color_t get_wind_text_color(float val) {
 }
 
 lv_color_t get_wind_bg_color(float val) {
+    ESP_LOGD("get_wind_bg_color", "Input is %f", val);
 
     if (val < 3) {
         return my_colors::bg_light_blue;
