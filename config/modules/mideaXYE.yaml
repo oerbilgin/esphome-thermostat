@@ -17,7 +17,7 @@ script:
   - id: wait_send
     then:
     - lambda: |-
-        id(midea_uart).write(xyeVars.waitSendData,16);
+        id(midea_uart).write_array(xyeVars.waitSendData,16);
         xyeVars.waitingForResponse = true;
         xyeVars.waitingToSend = false;
         xyeVars.commandSent = true;
@@ -50,7 +50,7 @@ script:
           resp = id(midea_uart).available();
           if (resp==0) 
           {
-            id(midea_uart).write(xyeVars.sendData, SEND_LEN);
+            id(midea_uart).write_array(xyeVars.sendData, SEND_LEN);
             ESP_LOGI("custom","sent command");
             xyeVars.waitingForResponse = true;
             xyeVars.commandSent = true;
@@ -90,10 +90,11 @@ sensor:
           {
             if (i<30)
             {
-              xyeVars.recData[i] = id(midea_uart).read();
+              id(midea_uart).read_byte(&xyeVars.recData[i]);
             } else
             {
-              id(midea_uart).read();
+              uint8_t dummy;
+              id(midea_uart).read_byte(&dummy);
             }
           }
           ESP_LOGI("custom","done reading, examining data");
@@ -105,7 +106,8 @@ sensor:
           // it's been 2 update cycles with no change in length of data, this is leftover data. dump it.
           for (i=0;i<resp;i++)
           {
-            id(midea_uart).read();
+            uint8_t dummy;
+            id(midea_uart).read_byte(&dummy);
           }
           ESP_LOGI("custom","dumped some data: %i",resp);
           xyeVars.waitingForResponse = false;
@@ -198,7 +200,7 @@ sensor:
         ESP_LOGI("custom","going to send a query package...");
         if (!(xyeVars.waitingToSend || (resp != 0)))
         {
-          id(midea_uart).write(xyeVars.queryData,16);
+          id(midea_uart).write_array(xyeVars.queryData,16);
           ESP_LOGI("custom","sent query package, waiting for response...");
           xyeVars.waitingForResponse = true;
         } else 

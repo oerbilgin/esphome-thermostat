@@ -1,3 +1,49 @@
+esphome:
+  includes:
+    - modules/lvgl_helpers.h
+
+color:
+  - id: chip_label_color_dark
+    hex: 6B7280
+  - id: chip_label_color_light
+    hex: C3C4C6
+  - id: chip_bg_color_red
+    hex: FEE2E2
+  - id: chip_text_color_red
+    hex: DC2626
+  - id: chip_bg_color_green
+    hex: DCFCE7
+  - id: chip_text_color_green
+    hex: 16A34A
+  - id: chip_bg_color_purple
+    hex: FCE1FE
+  - id: chip_text_color_purple
+    hex: A928DC
+  - id: chip_bg_color_maroon
+    hex: CF7D88
+  - id: chip_text_color_maroon
+    hex: AC2A44
+  - id: chip_bg_color_orange
+    hex: FEDCC8
+  - id: chip_text_color_orange
+    hex: C86604
+  - id: chip_bg_color_yellow
+    hex: FEF3C7
+  - id: chip_text_color_yellow
+    hex: CA8A04
+  - id: chip_bg_color_ice_blue
+    hex: CEF7F8
+  - id: chip_text_color_ice_blue
+    hex: 11A6A6
+  - id: chip_bg_color_light_blue
+    hex: CFF0F8
+  - id: chip_text_color_light_blue
+    hex: 0369A1
+  - id: chip_bg_color_dark_blue
+    hex: CEDDF8
+  - id: chip_text_color_dark_blue
+    hex: 3838E5
+
 json:
 
 substitutions:
@@ -8,8 +54,8 @@ substitutions:
   thermostat_arc_width: 48
   thermostat_setpoint_knob_size: 8
   thermostat_actual_knob_size: -4
-  thermostat_arc_min_value: 32
-  thermostat_arc_max_value: 100
+  thermostat_arc_min_value: 55
+  thermostat_arc_max_value: 90
   initial_setpoint_value: 72
 
 globals:
@@ -18,10 +64,39 @@ globals:
     initial_value: 'false'
   - id: thermostat_arc_max_value_global
     type: int
-    initial_value: '100' # cant substitute this for some reason, make sure it matches
+    initial_value: '90' # cant substitute this for some reason, make sure it matches
   - id: thermostat_arc_min_value_global
     type: int
-    initial_value: '32' # cant substitute this for some reason, make sure it matches
+    initial_value: '55' # cant substitute this for some reason, make sure it matches
+
+script:
+- id: update_wind_color
+  mode: restart # Restarts the script if called again quickly
+  then:
+    - lambda: |-
+        float s = std::isnan(id(wind_speed_today).state) ? 0.0f : id(wind_speed_today).state;
+        float g = std::isnan(id(wind_gust_today).state) ? 0.0f : id(wind_gust_today).state;
+        float max_wind = std::max(s, g);
+
+        lv_color_t text_color = get_wind_text_color(max_wind);
+        lv_color_t bg_color = get_wind_bg_color(max_wind);
+        lv_color_t label_color;
+
+        if (max_wind > 54) {
+          label_color = my_colors::text_light_gray;
+        } else {
+          label_color = my_colors::text_dark_gray;
+        }
+
+        lv_obj_set_style_bg_color(id(wind_condition_chip), bg_color, LV_PART_MAIN);
+        lv_obj_set_style_text_color(id(wind_speed_label), text_color, LV_PART_MAIN);
+
+        lv_obj_set_style_text_color(id(wind_gust_label), label_color, LV_PART_MAIN);
+        lv_obj_set_style_text_color(id(wind_condtion_chip_label), label_color, LV_PART_MAIN);
+        lv_obj_set_style_text_color(id(wind_speed_unit), label_color, LV_PART_MAIN);
+
+        // Force immediate redraw 
+        lv_obj_invalidate(id(wind_condition_chip));
 
 
 number:
@@ -49,87 +124,38 @@ number:
           value: 'false'
 
 sensor:
+  # AQI
   - platform: homeassistant
     id: aqi_sensor
     entity_id: sensor.airnow_air_quality_index
     internal: true
-    on_value:
+    on_raw_value:
       then:
-        - lvgl.label.update:
-            id: aqi_number
-            text: !lambda 'return to_string((int)x);'
         - if:
             condition:
-              lambda: 'return x <= 50;'
+              lambda: 'return id(aqi_sensor).has_state();'
             then:
-              - lvgl.widget.update:
-                  id: aqi_chip
-                  bg_color: 0xD1FAE5
-                  border_color: 0x6EE7B7
-                  shadow_color: 0x6EE7B7
               - lvgl.label.update:
                   id: aqi_number
-                  text_color: 0x047857
-        - if:
-            condition:
-              lambda: 'return x > 50 && x <= 100;'
-            then:
+                  text: !lambda 'return to_string((int)x);'
+                  text_color: !lambda 'return get_aqi_text_color((float)x);'
               - lvgl.widget.update:
                   id: aqi_chip
-                  bg_color: 0xFEF3C7
-                  border_color: 0xFBBF24
-                  shadow_color: 0xFBBF24
+                  bg_color: !lambda 'return get_aqi_bg_color((float)x);'
+                  shadow_color: !lambda 'return get_aqi_bg_color((float)x);'
+            else:
               - lvgl.label.update:
                   id: aqi_number
-                  text_color: 0x92400E
-        - if:
-            condition:
-              lambda: 'return x > 100 && x <= 150;'
-            then:
+                  text: "err"
+                  text_color: chip_label_color_dark
               - lvgl.widget.update:
                   id: aqi_chip
-                  bg_color: 0xFFF4E1
-                  border_color: 0xF59E0B
-                  shadow_color: 0xF59E0B
-              - lvgl.label.update:
-                  id: aqi_number
-                  text_color: 0x9A3412
-        - if:
-            condition:
-              lambda: 'return x > 150 && x <= 200;'
-            then:
-              - lvgl.widget.update:
-                  id: aqi_chip
-                  bg_color: 0xFECACA
-                  border_color: 0xEF4444
-                  shadow_color: 0xEF4444
-              - lvgl.label.update:
-                  id: aqi_number
-                  text_color: 0xB91C1C
-        - if:
-            condition:
-              lambda: 'return x > 200 && x <= 300;'
-            then:
-              - lvgl.widget.update:
-                  id: aqi_chip
-                  bg_color: 0xE9E4FF
-                  border_color: 0x7C3AED
-                  shadow_color: 0x7C3AED
-              - lvgl.label.update:
-                  id: aqi_number
-                  text_color: 0x4C1D95
-        - if:
-            condition:
-              lambda: 'return x > 300;'
-            then:
-              - lvgl.widget.update:
-                  id: aqi_chip
-                  bg_color: 0xE9D5D3
-                  border_color: 0x881337
-                  shadow_color: 0x881337
-              - lvgl.label.update:
-                  id: aqi_number
-                  text_color: 0x6B0F1F
+                  bg_color: chip_label_color_light
+                  shadow_color: chip_label_color_light
+
+  
+  # Inside house temp
+  # TODO: make logic for which inside temp to use based on availability, or do this directly in HASS
   - platform: homeassistant
     id: average_house_temperature
     entity_id: sensor.average_house_temperature
@@ -157,20 +183,32 @@ sensor:
               ESP_LOGI("Thermostat", "Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", min_val, actual_temp, result);
               return result;
   
+  # next rain probability
   - platform: homeassistant
     id: next_rain_probability
     entity_id: sensor.next_rain_forecast
     attribute: precipitation_probability
     internal: true
-    # on_value: # TODO update rain chip
+    on_value: 
+      then:
+        lvgl.label.update:
+          id: next_rain_probability_label
+          text: !lambda 'return to_string((int)x) + "%";'
 
+  # wind speed forecast
   - platform: homeassistant
     id: wind_speed_today
     entity_id: sensor.nws_now_forecast
     internal: true
     attribute: wind_speed
-    # on_value: # TODO update wind chip TODO replace condition chip with wind chip
+    on_value:
+      then:
+        lvgl.label.update:
+          id: wind_speed_label
+          text: !lambda 'return to_string((int)x);'
 
+  # wind bearing forecast
+  # TODO: hook this up to something
   - platform: homeassistant
     id: wind_bearing_today
     entity_id: sensor.nws_now_forecast
@@ -178,48 +216,200 @@ sensor:
     attribute: wind_bearing
     # on_value: # TODO update wind chip TODO replace condition chip with wind chip
 
+  # wind gust forecast
   - platform: homeassistant
     id: wind_gust_today
     entity_id: sensor.nws_now_forecast
     internal: true
     attribute: wind_gust
-    # on_value: # TODO update wind chip TODO replace condition chip with wind chip
+    on_value:
+      then:
+        lvgl.label.update:
+          id: wind_gust_label
+          text: !lambda 'return "Gust " + to_string((int)x);'
   
+  # todays high or low
+  # TODO: guard against unavailable
   - platform: homeassistant
     id: temperature_today
     entity_id: sensor.nws_now_forecast
     internal: true
     attribute: temperature
-    # on_value: # TODO update temp chip; day high if forecast_is_daytime, otherwise this is the low
+    on_value:
+      if:
+        condition:
+          lambda: 'return id(forecast_is_daytime).state;'
+        then:
+          - lvgl.label.update:
+              id: days_high_number
+              text: !lambda 'return to_string((int)x) + "°F";'
+              text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.label.update:
+              id: days_high_label
+              text: "\uF077 High"
+          - lvgl.widget.update:
+              id: days_high_chip
+              bg_color: !lambda 'return get_temp_bg_color((float)x);'
+              shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+        else:
+          - lvgl.label.update:
+              id: days_low_number
+              text: !lambda 'return to_string((int)x) + "°F";'
+              text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.widget.update:
+              id: days_low_chip
+              bg_color: !lambda 'return get_temp_bg_color((float)x);'
+              shadow_color: !lambda 'return get_temp_bg_color((float)x);'
   
+  # todays low or tomorrows high
+  # TODO: guard against unavailable
   - platform: homeassistant
     id: temperature_next
-    entity_id: sensor.nws_now_forecast
+    entity_id: sensor.nws_next_forecast
     internal: true
     attribute: temperature
-    # on_value: # TODO update temp chip; if forecast_is_daytime = off/false, this is tomorrow's high; update the high temp chip with a symbol for tomorrow
-
-text_sensor:
+    on_value:
+      if:
+        condition:
+          lambda: 'return id(forecast_is_daytime).state;'
+        then:
+          - lvgl.label.update:
+              id: days_low_number
+              text: !lambda 'return to_string((int)x) + "°F";'
+              text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.widget.update:
+              id: days_low_chip
+              bg_color: !lambda 'return get_temp_bg_color((float)x);'
+              shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+              
+        else:
+          - lvgl.label.update:
+              id: days_high_number
+              text: !lambda 'return to_string((int)x) + "°F";'
+              text_color: !lambda 'return get_temp_text_color((float)x);'
+          - lvgl.label.update: # TODO: maybe use a symbol?
+              id: days_high_label
+              text: "\uF077 High \uF054"
+          - lvgl.widget.update:
+              id: days_high_chip
+              bg_color: !lambda 'return get_temp_bg_color((float)x);'
+              shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+  
+  # outside temp
   - platform: homeassistant
-    id: next_rain_description
-    entity_id: sensor.next_rain_forecast
-    attribute: description
+    id: outside_temp_sensor
+    entity_id: sensor.average_outside_temperature
     internal: true
-    # on_value: # TODO update the rain chip
-
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: outside_temp_number
+            text: !lambda 'return to_string((int)x) + "°F";'
+            text_color: !lambda 'return get_temp_text_color((float)x);'
+        - lvgl.widget.update:
+            id: outside_temp_chip
+            bg_color: !lambda 'return get_temp_bg_color((float)x);'
+            shadow_color: !lambda 'return get_temp_bg_color((float)x);'
+    
+binary_sensor:
+  # use to order the temp chips
   - platform: homeassistant
     id: forecast_is_daytime
     entity_id: sensor.nws_now_forecast
     internal: true
     attribute: is_daytime
-    # on_value: # TODO use to order the temp chips
+
+text_sensor:
+  # next rain day
+  - platform: homeassistant
+    id: next_rain_day_sensor
+    entity_id: sensor.next_rain_forecast
+    internal: true
+    on_raw_value: 
+      then:
+        if:
+          condition:
+            lambda: 'return id(next_rain_day_sensor).has_state();'
+          then:
+            if:
+              condition:
+                lambda: 'return x == "No Rain Forecasted";'
+              then:
+                - lvgl.label.update:
+                    id: next_rain_day
+                    text: "Dry"
+                    text_color: !lambda 'return my_colors::text_yellow;'
+                - lvgl.widget.update:
+                    id: next_rain_chip
+                    bg_color: !lambda 'return my_colors::bg_yellow;'
+              else:
+                - lvgl.label.update:
+                    id: next_rain_day
+                    text: !lambda 'return x.substr(0, 3);'
+                    text_color: !lambda 'return my_colors::text_dark_blue;'
+                - lvgl.widget.update:
+                    id: next_rain_chip
+                    bg_color: !lambda 'return my_colors::bg_dark_blue;'
+          else:
+            - lvgl.label.update:
+                id: next_rain_day
+                text: "err"
+                text_color: !lambda 'return my_colors::text_dark_gray;'
+            - lvgl.widget.update:
+                id: next_rain_chip
+                bg_color: !lambda 'return my_colors::text_light_gray;'
   
+  # weather conditions
   - platform: homeassistant
     id: conditions_today
     entity_id: sensor.nws_now_forecast
     internal: true
     attribute: condition
-    # on_value: # TODO update the conditions icon (TODO: put this icon next to the date time)
+    on_raw_value:
+      then:
+        if:
+          condition:
+            lambda: 'return id(conditions_today).has_state();'
+          then:
+            lvgl.label.update:
+              id: days_condition_icon
+              text: !lambda |-
+                  if (id(conditions_today).state == "sunny") {
+                    return "\U000F0599";
+                  } else if (id(conditions_today).state == "clear-night") {
+                      return "\U000F0594";
+                  } else if (id(conditions_today).state == "cloudy") {
+                      return "\U000F0590";
+                  } else if (id(conditions_today).state == "exceptional") {
+                      return "\U000F00C5";
+                  } else if (id(conditions_today).state == "fog") {
+                      return "\U000F0591";
+                  } else if (id(conditions_today).state == "hail") {
+                      return "\U000F0576";
+                  } else if (id(conditions_today).state == "lightning") {
+                      return "\U000F0593";
+                  } else if (id(conditions_today).state == "lightning-rainy") {
+                      return "\U000F0593";
+                  } else if (id(conditions_today).state == "partlycloudy") {
+                      return "\U000F0595";
+                  } else if (id(conditions_today).state == "pouring") {
+                      return "\U000F0576";
+                  } else if (id(conditions_today).state == "rainy") {
+                      return "\U000F0597";
+                  } else if (id(conditions_today).state == "snowy") {
+                      return "\U000F0598";
+                  } else if (id(conditions_today).state == "snowy-rainy") {
+                      return "\U000F0598";
+                  } else if (id(conditions_today).state == "windy") {
+                      return "\U000F059D";
+                  } else if (id(conditions_today).state == "windy-variant") {
+                      return "\U000F059D";
+                  } else { return "\U000F02D7"; };
+          else:
+            lvgl.label.update:
+              id: days_condition_icon
+              text: "err"
+              text_font: montserrat_48
 
 
 # External icon fonts - auto-generated for icons used in this design
@@ -245,6 +435,17 @@ font:
       "\U000F0393",  # Thermostat
       "\U000F059D",  # Windy
       "\U000F0595",  # Partly Cloudy
+      "\U000F0599",  # Sunny
+      "\U000F0597",  # Rainy
+      "\U000F0590",  # Cloudy
+      "\U000F0593",  # Lightning
+      "\U000F0594",  # Night
+      "\U000F0598",  # Snowy
+      "\U000F0591",  # Foggy
+      "\U000F0576",  # Umbrella
+      "\U000F00C5",  # Bell Ring
+      "\U000F0349",  # Search
+      "\U000F02D7",  # Help
     ]
 
 lvgl:
@@ -254,6 +455,7 @@ lvgl:
       then:
         - lvgl.widget.show:
             id: screen_dimmer
+  
 
   pages:
     - id: canvas_9
@@ -306,8 +508,8 @@ lvgl:
                         id: setpoint_number
                         text: !lambda 'return to_string((int)id(setpoint_value).state) + "°F";'
                         text_font: montserrat_34
-                    - lvgl.widget.show:
-                        id: turbo_button
+                    # - lvgl.widget.show: # FIXME: when turbo mode is enabled in xye, can uncomment
+                    #     id: turbo_button
                     - lvgl.widget.show:
                         id: cool_mode_thermostat
                     - lvgl.widget.show:
@@ -455,36 +657,38 @@ lvgl:
                   bg_color: 0xE5E7EB
                   radius: 89
                   text_color: 0x1F2937
-                  checkable: true
-                  on_click:
-                    - lvgl.widget.update:
-                        id: auto_mode_button
-                        state:
-                          checked: true
-                    - lvgl.widget.update:
-                        id: 
-                          - cool_mode_button
-                          - heat_mode_button
-                          - fan_mode_button
-                          - off_mode_button
-                        state:
-                          checked: false
-                    - lvgl.widget.show:
-                        id: auto_mode_thermostat
-                    - lvgl.widget.hide:
-                        id: turbo_button
-                    - lvgl.widget.hide:
-                        id: cool_mode_thermostat
-                    - lvgl.widget.hide:
-                        id: heat_mode_thermostat
-                    - lvgl.widget.hide:
-                        id: fan_mode_thermostat
-                    - lvgl.widget.hide:
-                        id: setpoint
-                    - lvgl.widget.hide:
-                        id: off_mode_thermostat
-                    - lvgl.widget.show:
-                        id: fan_selector
+                  # FIXME: auto mode is disabled for now
+                  hidden: true
+                  # checkable: true 
+                  # on_click:
+                  #   - lvgl.widget.update:
+                  #       id: auto_mode_button
+                  #       state:
+                  #         checked: true
+                  #   - lvgl.widget.update:
+                  #       id: 
+                  #         - cool_mode_button
+                  #         - heat_mode_button
+                  #         - fan_mode_button
+                  #         - off_mode_button
+                  #       state:
+                  #         checked: false
+                  #   - lvgl.widget.show:
+                  #       id: auto_mode_thermostat
+                  #   - lvgl.widget.hide:
+                  #       id: turbo_button
+                  #   - lvgl.widget.hide:
+                  #       id: cool_mode_thermostat
+                  #   - lvgl.widget.hide:
+                  #       id: heat_mode_thermostat
+                  #   - lvgl.widget.hide:
+                  #       id: fan_mode_thermostat
+                  #   - lvgl.widget.hide:
+                  #       id: setpoint
+                  #   - lvgl.widget.hide:
+                  #       id: off_mode_thermostat
+                  #   - lvgl.widget.show:
+                  #       id: fan_selector
                   widgets:
                     - label:
                         id: auto_mode_icon
@@ -564,7 +768,7 @@ lvgl:
 
         - label:
             id: todays_date
-            x: 20
+            x: 70
             y: 10
             width: 370
             height: 30
@@ -575,7 +779,7 @@ lvgl:
 
         - label:
             id: todays_time
-            x: 20
+            x: 70
             y: 40
             width: 370
             height: 30
@@ -1161,13 +1365,13 @@ lvgl:
             y: 224
             width: 110
             height: 110
-            bg_color: 0xFEE2E2
+            bg_color: chip_label_color_light
             border_width: 0
             border_color: 0xFCA5A5
             radius: 8
             shadow_width: 15
-            shadow_color: 0xF87171
-            shadow_opa: 20%
+            shadow_color: chip_label_color_light
+            shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
@@ -1177,8 +1381,8 @@ lvgl:
                   y: 10
                   width: 110
                   height: 40
-                  text: "101oF"
-                  text_color: 0xDC2626
+                  text: "---"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1188,7 +1392,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "Outside"
-                  text_color: 0x6B7280
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1250,13 +1454,13 @@ lvgl:
             y: 224
             width: 110
             height: 110
-            bg_color: 0xDCFCE7
+            bg_color: chip_label_color_light
             border_width: 0
             border_color: 0x86EFAC
             radius: 8
             shadow_width: 15
-            shadow_color: 0x86EFAC
-            shadow_opa: 20%
+            shadow_color: chip_label_color_light
+            shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
@@ -1267,7 +1471,7 @@ lvgl:
                   width: 110
                   height: 40
                   text: "--"
-                  text_color: 0x16A34A
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1277,7 +1481,7 @@ lvgl:
                   width: 100
                   height: 30
                   text: "AQI"
-                  text_color: 0x6B7280
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1287,13 +1491,13 @@ lvgl:
             y: 85
             width: 110
             height: 110
-            bg_color: 0xCFF0F8
+            bg_color: chip_label_color_light
             border_width: 0
             border_color: 0x7DD3FC
             radius: 8
             shadow_width: 15
-            shadow_color: 0x7DD3FC
-            shadow_opa: 20%
+            shadow_color: chip_label_color_light
+            shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
@@ -1303,8 +1507,8 @@ lvgl:
                   y: 10
                   width: 110
                   height: 40
-                  text: "42oF"
-                  text_color: 0x0369A1
+                  text: "---"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1313,8 +1517,8 @@ lvgl:
                   y: 70
                   width: 100
                   height: 30
-                  text: "Low"
-                  text_color: 0x6B7280
+                  text: "\uF078 Low"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1324,13 +1528,13 @@ lvgl:
             y: 85
             width: 110
             height: 110
-            bg_color: 0xFEF3C7
+            bg_color: chip_label_color_light
             border_width: 0
             border_color: 0xFCD34D
             radius: 8
             shadow_width: 15
-            shadow_color: 0xFCD34D
-            shadow_opa: 20%
+            shadow_color: chip_label_color_light
+            shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
@@ -1340,8 +1544,8 @@ lvgl:
                   y: 10
                   width: 110
                   height: 40
-                  text: "72oF"
-                  text_color: 0xCA8A04
+                  text: "---"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
@@ -1350,8 +1554,8 @@ lvgl:
                   y: 70
                   width: 100
                   height: 30
-                  text: "High"
-                  text_color: 0x6B7280
+                  text: "\uF077 High"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1368,43 +1572,63 @@ lvgl:
             text_font: montserrat_18
 
         - obj:
-            id: days_condition_chip
+            id: wind_condition_chip
             x: 20
             y: 361
             width: 110
             height: 110
-            bg_color: 0xFEF3C7
+            bg_color: chip_label_color_light
             bg_grad_color: 0xFAFAFA
             bg_grad_dir: VER
             border_width: 0
             border_color: 0xFCD34D
             radius: 8
             shadow_width: 15
-            shadow_color: 0xFCD34D
-            shadow_opa: 20%
+            shadow_color: chip_label_color_light
+            shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
               - label:
-                  id: days_condition_label
+                  id: wind_gust_label
                   x: 5
-                  y: 70
+                  y: 54
                   width: 100
                   height: 30
-                  text: "Pt Cloudy"
-                  text_color: 0x6B7280
+                  text: "Gust --"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
               - label:
-                  id: days_condition_label_1
-                  x: 31
-                  y: 12
-                  width: 48
-                  height: 48
-                  text: "\U000F0595"
-                  text_font: mdi_icons_48
+                  id: wind_condtion_chip_label
+                  x: 5
+                  y: 80
+                  width: 100
+                  height: 30
+                  text: "Wind"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
-                  text_color: 0xCA8A04
+                  text_font: montserrat_20
+              - label:
+                  id: wind_speed_label
+                  x: 0
+                  y: 10
+                  width: 65
+                  height: 40
+                  text: "--"
+                  text_color: chip_label_color_dark
+                  text_align: CENTER
+                  text_font: montserrat_40
+              - label:
+                  id: wind_speed_unit
+                  x: 55
+                  y: 26
+                  width: 50
+                  height: 24
+                  text: "mph"
+                  text_color: chip_label_color_dark
+                  text_align: CENTER
+                  text_font: montserrat_20
 
         - obj:
             id: next_rain_chip
@@ -1412,34 +1636,44 @@ lvgl:
             y: 361
             width: 110
             height: 110
-            bg_color: 0xCFF0F8
+            bg_color: chip_label_color_light
             border_width: 0
             border_color: 0x7DD3FC
             radius: 8
             shadow_width: 15
-            shadow_color: 0x7DD3FC
-            shadow_opa: 20%
+            shadow_color: chip_label_color_light
+            shadow_opa: 100%
             pad_all: 0
             scrollbar_mode: "OFF"
             widgets:
               - label:
                   id: next_rain_day
                   x: 0
-                  y: 10
+                  y: 3
                   width: 110
-                  height: 40
-                  text: "Tues"
-                  text_color: 0x0369A1
+                  height: 48
+                  text: "---"
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_40
               - label:
+                  id: next_rain_probability_label
+                  x: 6
+                  y: 51
+                  width: 100
+                  height: 30
+                  text: "---"
+                  text_color: chip_label_color_dark
+                  text_align: CENTER
+                  text_font: montserrat_20
+              - label:
                   id: next_rain_label
                   x: 5
-                  y: 70
+                  y: 76
                   width: 100
                   height: 30
                   text: "Next Rain"
-                  text_color: 0x6B7280
+                  text_color: chip_label_color_dark
                   text_align: CENTER
                   text_font: montserrat_20
 
@@ -1463,6 +1697,16 @@ lvgl:
             text_font: montserrat_32
             text_align: CENTER
             text_color: 0x6B7280
+        - label:
+            id: days_condition_icon
+            x: 15
+            y: 15
+            width: 48
+            height: 48
+            text: "\U000F0349"
+            text_font: mdi_icons_48
+            text_align: CENTER
+            text_color: 0xCA8A04
         # screen dimmer overlay - dims the screen after 30 seconds of inactivity, blocks touching
         - obj:
             id: screen_dimmer
