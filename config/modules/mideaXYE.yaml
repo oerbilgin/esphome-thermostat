@@ -1,6 +1,6 @@
 esphome:
   includes:
-    - xyeVars.h
+    - modules/xyeVars.h
 
 # add this to replace the mySerial thing from arduino 
 uart:
