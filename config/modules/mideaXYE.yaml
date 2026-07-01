@@ -38,7 +38,7 @@ script:
           xyeVars.sendData[SEND_MODE] = xyeVars.opBytes;
           xyeVars.sendData[SEND_FAN] = xyeVars.fanBytes;
           xyeVars.sendData[SEND_TEMP] = xyeVars.setTemp;
-          ESP_LOGI("custom","Getting ready to send: op %02X fan %02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
+          ESP_LOGD("mideaXYE","Getting ready to send: op %02X fan %02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
           uint8_t i=0;
           uint32_t crc=0;
           int len=16;
@@ -49,18 +49,18 @@ script:
               crc+=xyeVars.sendData[i];
             }
           }
-          ESP_LOGI("custom","sum of values for CRC calc is %i",crc);
+          ESP_LOGD("mideaXYE","sum of values for CRC calc is %i",crc);
           xyeVars.sendData[SEND_CRC] = 0xFF - (crc&0xFF);
-          ESP_LOGI("custom","calculated CRC is %x",crc);
+          ESP_LOGD("mideaXYE","calculated CRC is %x",crc);
           resp = id(midea_uart).available();
           if (resp==0) 
           {
             id(midea_uart).write_array(xyeVars.sendData, SEND_LEN);
-            ESP_LOGI("custom","sent command");
+            ESP_LOGD("mideaXYE","sent command");
             xyeVars.waitingForResponse = true;
             xyeVars.commandSent = true;
           } else {
-            ESP_LOGI("custom","had to wait to send, response was available");
+            ESP_LOGD("mideaXYE","had to wait to send, response was available");
             std::memcpy(xyeVars.waitSendData, xyeVars.sendData, 16);
             xyeVars.waitingToSend = true;
           }
@@ -83,14 +83,14 @@ sensor:
     lambda: |-
       uint8_t i,resp;
       xyeVars.doneReading = false;
-      //ESP_LOGI("custom","checking for incoming serial data");
+      ESP_LOGD("mideaXYE","checking for incoming serial data");
       resp = id(midea_uart).available();
       if (resp>0)
       {
-        ESP_LOGI("custom","there are %i bytes of data waiting",resp);
+        ESP_LOGD("mideaXYE","there are %i bytes of data waiting",resp);
         if (resp == 32)
         {
-          ESP_LOGI("custom","32 bytes of data found, reading data...");
+          ESP_LOGD("mideaXYE","32 bytes of data found, reading data...");
           for (i=0; i<resp; i++)
           {
             if (i<30)
@@ -102,7 +102,7 @@ sensor:
               id(midea_uart).read_byte(&dummy);
             }
           }
-          ESP_LOGI("custom","done reading, examining data");
+          ESP_LOGD("mideaXYE","done reading, examining data");
           xyeVars.doneReading = true;
           xyeVars.waitingForResponse = false;
           xyeVars.prevResp = 0;
@@ -114,21 +114,21 @@ sensor:
             uint8_t dummy;
             id(midea_uart).read_byte(&dummy);
           }
-          ESP_LOGI("custom","dumped some data: %i",resp);
+          ESP_LOGW("mideaXYE","dumped some data: %i",resp);
           xyeVars.waitingForResponse = false;
           xyeVars.prevResp = 0;
           xyeVars.doneReading = true;
         } else 
         {
               // might have caught in middle of stream
-              ESP_LOGI("custom","got small response, wait for more. size was %i", resp);
+              ESP_LOGW("mideaXYE","got small response, wait for more. size was %i", resp);
               xyeVars.prevResp = resp;
         }
       }
       if (xyeVars.waitingForResponse)
       {
         if (xyeVars.waitCount > 2){
-          ESP_LOGI("custom","waited 3 cycles for a response, giving up");
+          ESP_LOGW("mideaXYE","waited 3 cycles for a response, giving up");
           xyeVars.waitingForResponse = false;
           xyeVars.waitCount = 0;
           xyeVars.doneReading = true;
@@ -157,19 +157,19 @@ sensor:
             xyeVars.fanBytes = xyeVars.recData[REC_FAN];
             xyeVars.opBytes = xyeVars.recData[REC_MODE];
             xyeVars.setTemp = xyeVars.recData[REC_TEMP];
-            ESP_LOGI("custom","Got these updated values: op %02X fan %02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
+            ESP_LOGD("mideaXYE","Got these updated values: op %02X fan %02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
           } else 
           {
-            ESP_LOGI("custom","First 6 bytes of incoming data were bad, not using values");
+            ESP_LOGW("mideaXYE","First 6 bytes of incoming data were bad, not using values");
           }
         } else
         {
           xyeVars.commandSent = false;
-          ESP_LOGI("custom","dumping first received data after command sent OR had new input waiting to send");
+          ESP_LOGI("mideaXYE","dumping first received data after command sent OR had new input waiting to send");
         }
         if (xyeVars.waitingToSend) 
         {
-          ESP_LOGI("custom","finished reading, had data waiting to write. now writing...");
+          ESP_LOGI("mideaXYE","finished reading, had data waiting to write. now writing...");
           id(wait_send).execute();
         }
         
@@ -198,19 +198,19 @@ sensor:
     internal: true
     update_interval: $aux_update_interval
     lambda: |-
-      ESP_LOGI("custom","query check. newInput: %s  waitingForResponse:  %s",xyeVars.newInput ? "true" : "false", xyeVars.waitingForResponse ? "true" : "false");
+      ESP_LOGD("mideaXYE","query check. newInput: %s  waitingForResponse:  %s",xyeVars.newInput ? "true" : "false", xyeVars.waitingForResponse ? "true" : "false");
       if (!xyeVars.newInput && !xyeVars.waitingForResponse)
       {
         uint8_t resp=id(midea_uart).available();
-        ESP_LOGI("custom","going to send a query package...");
+        ESP_LOGD("mideaXYE","going to send a query package...");
         if (!(xyeVars.waitingToSend || (resp != 0)))
         {
           id(midea_uart).write_array(xyeVars.queryData,16);
-          ESP_LOGI("custom","sent query package, waiting for response...");
+          ESP_LOGD("mideaXYE","sent query package, waiting for response...");
           xyeVars.waitingForResponse = true;
         } else 
         {
-          ESP_LOGI("custom","waiting to send/receive prevented sending query package");
+          ESP_LOGD("mideaXYE","waiting to send/receive prevented sending query package");
         }
       }
       return 0;
@@ -323,7 +323,7 @@ select:
           if (xyeVars.fan != x)
           {
             xyeVars.fan = x;
-            ESP_LOGI("custom","change fan to: %x",x);
+            ESP_LOGI("mideaXYE","change fan to: %x",x);
             if (xyeVars.fan == "high"){
               xyeVars.fanBytes = 0x01;
             } else if (xyeVars.fan == "auto"){
@@ -334,9 +334,9 @@ select:
               xyeVars.fanBytes = 0x03;
             } else {
               xyeVars.fanBytes = 0x80;
-              ESP_LOGI("custom","Defaulting to auto, invalid fan input: %s",x);
+              ESP_LOGE("mideaXYE","Defaulting to auto, invalid fan input: %s",x);
             }
-            ESP_LOGI("custom","selected %x, pressing button to send",xyeVars.fanBytes);
+            ESP_LOGI("mideaXYE","selected %x, pressing button to send",xyeVars.fanBytes);
             xyeVars.newInput = true;
           }
 
@@ -397,9 +397,9 @@ select:
               xyeVars.opBytes = 0x81;
             } else {
               xyeVars.opBytes = 0x00;
-              ESP_LOGI("custom","Defaulting to off, invalid mode input: %s",x);
+              ESP_LOGE("mideaXYE","Defaulting to off, invalid mode input: %s",x);
             }
-            ESP_LOGI("custom","selected %x for mode, setting send flag",xyeVars.opBytes);
+            ESP_LOGI("mideaXYE","selected %x for mode, setting send flag",xyeVars.opBytes);
             xyeVars.newInput = true;
           }
 
