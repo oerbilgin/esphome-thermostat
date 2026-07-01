@@ -45,8 +45,6 @@ script:
           lv_label_set_text(target_label, default_icon.c_str()); // default
         }
 
-
-
 - id: update_wind_color
   mode: restart # Restarts the script if called again quickly
   then:
@@ -234,6 +232,8 @@ sensor:
   - platform: homeassistant
     id: average_house_temperature
     entity_id: sensor.average_house_temperature
+    device_class: temperature
+    unit_of_measurement: "°F"
     internal: true
     on_value:
       then:
@@ -626,6 +626,8 @@ lvgl:
                         text_font: montserrat_34
                     # - lvgl.widget.show: # FIXME: when turbo mode is enabled in xye, can uncomment
                     #     id: turbo_button
+                    - lvgl.widget.hide:
+                        id: off_mode_label
                     - lvgl.widget.show:
                         id: cool_mode_thermostat
                     - lvgl.widget.show:
@@ -684,6 +686,8 @@ lvgl:
                         id: setpoint_number
                         text: !lambda 'return to_string((int)id(setpoint_value).state) + "°F";'
                         text_font: montserrat_34
+                    - lvgl.widget.hide:
+                        id: off_mode_label
                     - lvgl.widget.show:
                         id: heat_mode_thermostat
                     - lvgl.widget.show:
@@ -740,6 +744,8 @@ lvgl:
                     - lvgl.label.update:
                         id: hvac_mode_label
                         text: "Fan"
+                    - lvgl.widget.hide:
+                        id: off_mode_label
                     - lvgl.widget.show:
                         id: fan_mode_thermostat
                     - lvgl.widget.show:
@@ -793,6 +799,8 @@ lvgl:
                   #         - off_mode_button
                   #       state:
                   #         checked: false
+                  #  - lvgl.widget.hide:
+                  #       id: off_mode_label
                   #   - lvgl.widget.show:
                   #       id: auto_mode_thermostat
                   #   - lvgl.widget.hide:
@@ -848,14 +856,12 @@ lvgl:
                           - auto_mode_button
                         state:
                           checked: false
-                    - lvgl.label.update:
-                        id: setpoint_number
-                        text: "OFF"
-                        text_font: montserrat_34
+                    - lvgl.widget.show:
+                        id: off_mode_label
                     - lvgl.label.update:
                         id: hvac_mode_label
                         text: ""
-                    - lvgl.widget.show:
+                    - lvgl.widget.hide:
                         id: setpoint
                     - lvgl.widget.show:
                         id: off_mode_thermostat
@@ -1204,7 +1210,16 @@ lvgl:
                     arc_opa: 100%
                     arc_rounded: true
                   bg_opa: 0%
-
+        - label:
+            id: off_mode_label
+            x: 510
+            y: 100
+            width: 160
+            height: 55
+            text: "OFF"
+            text_color: !lambda 'return my_colors::text_dark_gray;'
+            text_align: CENTER
+            text_font: montserrat_48
         - obj:
             id: setpoint
             x: $thermostat_x_pos

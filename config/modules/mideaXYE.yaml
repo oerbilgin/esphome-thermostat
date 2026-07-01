@@ -2,6 +2,10 @@ esphome:
   includes:
     - modules/xyeVars.h
 
+substitutions:
+  sensor_update_interval: 15s # slow it down for debugging
+  aux_update_interval: 30s
+
 # add this to replace the mySerial thing from arduino 
 uart:
   id: midea_uart
@@ -74,7 +78,7 @@ sensor:
     name: "updater"
     id: updater
     internal: true
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     lambda: |-
       uint8_t i,resp;
       xyeVars.doneReading = false;
@@ -191,7 +195,7 @@ sensor:
     name: "querier"
     id: querier
     internal: true
-    update_interval: 15s
+    update_interval: $aux_update_interval
     lambda: |-
       ESP_LOGI("custom","query check. newInput: %s  waitingForResponse:  %s",xyeVars.newInput ? "true" : "false", xyeVars.waitingForResponse ? "true" : "false");
       if (!xyeVars.newInput && !xyeVars.waitingForResponse)
@@ -215,7 +219,7 @@ sensor:
     unit_of_measurement: "°F"
     #unit_of_measurement: "°C"
     id: t1
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     device_class: temperature
     lambda: |-
       return xyeVars.recData[T1_INDEX];
@@ -228,7 +232,7 @@ sensor:
     name: "Coil A Temperature"
     unit_of_measurement: "°F"
     #unit_of_measurement: "°C"
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     device_class: temperature
     lambda: |-
       return xyeVars.recData[T2A_INDEX];
@@ -237,7 +241,7 @@ sensor:
     name: "Coil B Temperature"
     unit_of_measurement: "°F"
     #unit_of_measurement: "°C"
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     device_class: temperature
     lambda: |-
       return xyeVars.recData[T2B_INDEX];
@@ -248,7 +252,7 @@ sensor:
     name: "Outside Air Temperature"
     unit_of_measurement: "°F"
     #unit_of_measurement: "°C"
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     device_class: temperature
     lambda: |-
       return xyeVars.recData[T3_INDEX];
@@ -259,14 +263,14 @@ sensor:
 text_sensor:
   - platform: template
     name: "Error Codes"
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     lambda: |-
       
       return {"E1: " + std::to_string(xyeVars.recData[23]) + " E2: " + std::to_string(xyeVars.recData[23])};
 
   - platform: template
     name: "Full data string"
-    update_interval: 15s
+    update_interval: $aux_update_interval
     lambda: |-
       std::ostringstream oss;
       oss << std::uppercase << std::hex << std::setfill('0');
@@ -287,7 +291,7 @@ select:
   - platform: template
     name: "Fan Mode"
     id: fanMode
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     options:
       - 'low'
       - 'medium'
@@ -339,7 +343,7 @@ select:
   - platform: template
     id: opMode
     name: "Operating Mode"
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     options:
       - 'off'
       - 'auto'
@@ -409,7 +413,7 @@ number:
     unit_of_measurement: "°F"
     #unit_of_measurement: "°C"
     device_class: temperature
-    update_interval: 1s
+    update_interval: $sensor_update_interval
     lambda: |-
       return xyeVars.setTemp;
     set_action:
