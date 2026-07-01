@@ -3,8 +3,8 @@ esphome:
     - modules/xyeVars.h
 
 substitutions:
-  sensor_update_interval: 15s # slow it down for debugging
-  aux_update_interval: 30s
+  sensor_update_interval: "15s" # slow it down for debugging
+  aux_update_interval: "30s"
 
 # add this to replace the mySerial thing from arduino 
 uart:
@@ -338,6 +338,11 @@ select:
             ESP_LOGI("custom","selected %x, pressing button to send",xyeVars.fanBytes);
             xyeVars.newInput = true;
           }
+    on_value:
+      then:
+        - script.execute:
+            id: update_fan_mode_ui
+            fan_mode: !lambda 'return x;'
 
 
   - platform: template
@@ -401,7 +406,12 @@ select:
             ESP_LOGI("custom","selected %x for mode, setting send flag",xyeVars.opBytes);
             xyeVars.newInput = true;
           }
-
+    on_value:
+      then:
+        - script.execute:
+            id: update_hvac_mode_ui
+            mode: !lambda 'return x;'
+      
 number:
   - platform: template
     name: "Set Point"
@@ -421,6 +431,15 @@ number:
         - lambda: |-
             xyeVars.setTemp = x;
             xyeVars.newInput = true;
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(setpoint_value).has_state();'
+            then:
+              - number.set:
+                  id: setpoint_value
+                  value: !lambda 'return x;'
 
 climate:
   - platform: thermostat
