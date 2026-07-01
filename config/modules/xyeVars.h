@@ -6,8 +6,8 @@
 #include <vector>
 
 
-#define RX_PIN 16
-#define TX_PIN 15 // This is the correct pin for the waveshare device
+#define RX_PIN 43 // This is the correct pin for the waveshare device
+#define TX_PIN 44 // This is the correct pin for the waveshare device
 
 #define CMD_VAL 1
 #define SEND_MODE 6
