@@ -11,4 +11,5 @@ packages:
   hardware_config: !include modules/hardware_config.yaml
   thermostat_ui: !include modules/thermostat_ui.yaml
   time_config: !include modules/time_sntp.yaml
-  midea_xye: !include modules/mideaXYE.yaml
+  xye_config: !include modules/mideaXYE.yaml
+  xye_uart: !include modules/mideaXYE_uart.yaml

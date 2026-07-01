@@ -6,8 +6,9 @@ logger:
   level: DEBUG
 
 packages:
-  main: !include modules/thermostat_ui.yaml
+  main_ui: !include modules/thermostat_ui.yaml
   time_config: !include modules/time_host.yaml
+  xye_config: !include modules/mideaXYE.yaml
 
 host:
 
@@ -30,3 +31,47 @@ touchscreen:
   - platform: sdl
     id: my_touch
     display: my_display
+
+number: 
+# these are for simulating new data from the midea unit
+  - platform: template
+    name: "Fan Bytes"
+    id: fanBytes
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 255
+    update_interval: $sensor_update_interval
+    lambda: |-
+      return xyeVars.fanBytes;
+    set_action:
+      - lambda: |-
+          xyeVars.fanBytes = x;
+
+  - platform: template
+    name: "Op Bytes"
+    id: opBytes
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 255
+    update_interval: $sensor_update_interval
+    lambda: |-
+      return xyeVars.opBytes;
+    set_action:
+      - lambda: |-
+          xyeVars.opBytes = x;
+
+  - platform: template
+    name: "Set Temp"
+    id: setTemp
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 100
+    update_interval: $sensor_update_interval
+    lambda: |-
+      return xyeVars.setTemp;
+    set_action:
+      - lambda: |-
+          xyeVars.setTemp = x;
