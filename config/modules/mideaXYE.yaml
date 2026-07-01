@@ -301,7 +301,7 @@ select:
     lambda: |-
       switch (xyeVars.fanBytes)
       {
-        case 0x80:
+        case 0x80: // 80 seems to be auto with fan off, ive also seen 81 (turbo in cool mode), 82, 84 (in cool mode). perhaps has to do with actual fan speed
           xyeVars.fan = "auto";
           break;
         case 0x01:
@@ -313,6 +313,9 @@ select:
         case 0x03:
           xyeVars.fan = "low";
           break;
+        // case 0x81:
+        //   xyeVars.fan = "turbo"; // only in cool mode
+        //   break;
         default:
           xyeVars.fan = "auto";
       }
