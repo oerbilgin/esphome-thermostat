@@ -1,8 +1,8 @@
 # https://community.home-assistant.io/t/esp32-s3-4-3inch-capacitive-touch-display-from-waveshare/658279/78
 
 esphome:
-  name: hvac-thermostat
-  friendly_name: HVAC Thermostat
+  name: hvac-thermostat-testing
+  friendly_name: HVAC Thermostat Testing
 
 logger:
   level: DEBUG
@@ -13,3 +13,4 @@ packages:
   time_config: !include modules/time_sntp.yaml
   xye_config: !include modules/mideaXYE.yaml
   xye_uart: !include modules/mideaXYE_uart.yaml
+  xye_all_sensors: !include modules/mideaXYE_all_recbytes.yaml
