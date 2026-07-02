@@ -1,0 +1,245 @@
+# this file is for debugging purposes
+# it creates a sensor for each byte of the received data array.
+# This allows us to see what is being received from the air handler
+# and to debug the communication.
+
+text_sensor:
+  - platform: template
+    name: "Byte 0 - preamble"
+    id: recdata_byte_0
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[0];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 1 - response code"
+    id: recdata_byte_1
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[1];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 2 - to master"
+    id: recdata_byte_2
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[2];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 3 - destination master device id"
+    id: recdata_byte_3
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[3];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 4 - device id"
+    id: recdata_byte_4
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[4];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 5 - destination master device id"
+    id: recdata_byte_5
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[5];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 6 - capabilities ?"
+    id: recdata_byte_6
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[6];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 7 - capabilities"
+    id: recdata_byte_7
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[7];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 8 - operating mode"
+    id: recdata_byte_8
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[8];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 9 - fan mode"
+    id: recdata_byte_9
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[9];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 10 - set temp"
+    id: recdata_byte_10
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[10];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 11 - t1 temp"
+    id: recdata_byte_11
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[11];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 12 - t2a temp"
+    id: recdata_byte_12
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[12];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 13 - t2b temp"
+    id: recdata_byte_13
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[13];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 14 - t3 temp"
+    id: recdata_byte_14
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[14];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 15 - current?"
+    id: recdata_byte_15
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[15];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 16 - ?"
+    id: recdata_byte_16
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[16];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 17 - timer start"
+    id: recdata_byte_17
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[17];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 18 - timer stop"
+    id: recdata_byte_18
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[18];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 19 - run status"
+    id: recdata_byte_19
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[19];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 20 - mode flags"
+    id: recdata_byte_20
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[20];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 21 - operating flags"
+    id: recdata_byte_21
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[21];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 22 - error 1"
+    id: recdata_byte_22
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[22];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 23 - error 2"
+    id: recdata_byte_23
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[23];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 24 - protect 1"
+    id: recdata_byte_24
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[24];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 25 - protect 2"
+    id: recdata_byte_25
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[25];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 26 - ccm comm err"
+    id: recdata_byte_26
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[26];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 27 - ?"
+    id: recdata_byte_27
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[27];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 28 - startup status flag 1"
+    id: recdata_byte_28
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[28];
+      return { esphome::str_sprintf("0x%02x", value) };
+
+  - platform: template
+    name: "Byte 29 - startup status flag 2"
+    id: recdata_byte_29
+    update_interval: $sensor_update_interval
+    lambda: |-
+      uint8_t value =  xyeVars.recData[29];
+      return { esphome::str_sprintf("0x%02x", value) };
