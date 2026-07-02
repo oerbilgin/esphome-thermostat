@@ -65,7 +65,7 @@ text_sensor:
     update_interval: $sensor_update_interval
     lambda: |-
       
-      return {"E1: " + std::to_string(xyeVars.recData[23]) + " E2: " + std::to_string(xyeVars.recData[23])};
+      return {"E1: " + std::to_string(xyeVars.recData[REC_E1]) + " E2: " + std::to_string(xyeVars.recData[REC_E2])};
 
   - platform: template
     name: "Full data string"
