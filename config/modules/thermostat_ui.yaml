@@ -2,6 +2,25 @@ esphome:
   includes:
     - modules/lvgl_helpers.h
     - "<lvgl.h>"
+  on_boot:
+    # TODO: probably can use this on_boot to fix whatever weirdness was happening with the climate element
+    priority: -100 # Low priority ensures components and Wi-Fi are initialized first
+    then:
+      - logger.log:
+          format: "Thermostat UI booted, waiting for valid temperature readings before updating setpoints"
+          level: INFO
+          tag: "thermostat_ui"
+      # Wait until the temperature sensors have actual valid readings
+      - wait_until:
+          lambda: |-
+            return !std::isnan(id(t1).state) && !std::isnan(id(average_house_temperature).state);
+      - logger.log:
+          format: "Valid temperature readings received, updating setpoints"
+          level: INFO
+          tag: "thermostat_ui"
+      - script.execute:
+          id: update_setpoints
+          visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
 
 json:
 
@@ -36,6 +55,50 @@ select:
     internal: true
 
 script:
+- id: update_setpoints
+  mode: restart
+  parameters:
+    visible_setpoint: float
+  then:
+    - lambda: |-
+        // turn on the flag
+        id(setpoint_updating) = true;
+
+        // update the visual components
+        lv_arc_set_value(id(setpoint_arc), visible_setpoint);
+        lv_label_set_text(id(setpoint_number), (to_string((int)visible_setpoint) + "°F").c_str());
+
+        // NOTE: This is one directional; if someone changes the internal setpoint
+        // Custom logic to get the controller to get to the desired temperature.
+        // calculate the error between the actual temp and the t1 temp
+        float error = id(t1).state - id(average_house_temperature).state;
+        ESP_LOGD("thermostat_ui","t1: %f, actual: %f, error: %f",id(t1).state,id(average_house_temperature).state,error);
+
+        // add the error to the visible setpoint to get the internal setpoint
+        // Ex1: if t1 sees 70 and its actually 75, the error is -5
+        // Ex1: if my setpoint is 75, the handler should be off
+        // Ex1: internal setpoint = 75 + -5 = 70, so the handler will not turn on
+
+        // Ex2: if t1 sees 80 and its actually 75, the error is +5
+        // Ex2: if my setpoint is 80, the handler should be on
+        // Ex2: internal setpoint = 80 + 5 = 85, so the handler will turn on to heat
+
+        // Ex3: if t1 sees 70 and its actually 75, the error is -5
+        // Ex3: my setpoint is 70, the handler should be on
+        // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
+        float internal_setpoint = visible_setpoint + error;
+        ESP_LOGD("thermostat_ui","visible setpoint: %f, new internal setpoint: %f",visible_setpoint,internal_setpoint);
+
+        // convert to uint8_t for sending to the midea unit
+        uint8_t internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
+        ESP_LOGD("thermostat_ui","internal setpoint int: %d",internal_setpoint_int);
+
+        // set the global variable for sending to the midea unit
+        xyeVars.setTemp = internal_setpoint_int;
+        xyeVars.newInput = true;
+
+        // turn off the flag
+        id(setpoint_updating) = false;
 - id: update_temp_icon
   mode: restart
   parameters:
@@ -283,10 +346,10 @@ script:
               - off_mode_thermostat
               - off_mode_label
               - hvac_mode_label
+              - setpoint
           - lvgl.widget.show:
               - fan_mode_thermostat
               - fan_selector
-              - setpoint
     - if:
         condition:
           lambda: 'return mode == "auto";'
@@ -374,48 +437,9 @@ number:
           args: x
           level: DEBUG
           tag: "thermostat_ui"
-      - globals.set:
-          id: setpoint_updating
-          value: 'true'
-      - lvgl.arc.update:
-          id: setpoint_arc
-          value: !lambda 'return x;'
-      - lvgl.label.update:
-          id: setpoint_number
-          text: !lambda 'return to_string((int)x) + "°F";'
-      - lambda: |-
-            // NOTE: This is one directional; if someone changes the internal setpoint
-            // Custom logic to get the controller to get to the desired temperature.
-            // calculate the error between the actual temp and the t1 temp
-            float error = id(t1).state - id(average_house_temperature).state;
-            ESP_LOGD("mideaXYE","t1: %f, actual: %f, error: %f",id(t1).state,id(average_house_temperature).state,error);
-
-            // add the error to the visible setpoint to get the internal setpoint
-            // Ex1: if t1 sees 70 and its actually 75, the error is -5
-            // Ex1: if my setpoint is 75, the handler should be off
-            // Ex1: internal setpoint = 75 + -5 = 70, so the handler will not turn on
-
-            // Ex2: if t1 sees 80 and its actually 75, the error is +5
-            // Ex2: if my setpoint is 80, the handler should be on
-            // Ex2: internal setpoint = 80 + 5 = 85, so the handler will turn on to heat
-
-            // Ex3: if t1 sees 70 and its actually 75, the error is -5
-            // Ex3: my setpoint is 70, the handler should be on
-            // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
-            float internal_setpoint = x + error;
-            ESP_LOGD("mideaXYE","visible setpoint: %f, new internal setpoint: %f",x,internal_setpoint);
-
-            // convert to uint8_t for sending to the midea unit
-            uint8_t internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
-            ESP_LOGD("mideaXYE","internal setpoint int: %d",internal_setpoint_int);
-
-            // set the global variable for sending to the midea unit
-            xyeVars.setTemp = internal_setpoint_int;
-            xyeVars.newInput = true;
-
-      - globals.set:
-          id: setpoint_updating
-          value: 'false'
+      - script.execute: 
+          id: update_setpoints
+          visible_setpoint: x
 
 sensor:
   # AQI

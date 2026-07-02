@@ -116,6 +116,7 @@ select:
         //   xyeVars.fan = "turbo"; // only in cool mode
         //   break;
         default:
+          ESP_LOGE("mideaXYE","xyeVars.fan defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
           xyeVars.fan = "auto";
       }
       return xyeVars.fan;
@@ -181,6 +182,7 @@ select:
           xyeVars.op = "fan_only";
           break;
         default:
+          ESP_LOGE("mideaXYE","xyeVars.op defaulting to off, invalid mode input: %02X",xyeVars.opBytes);
           xyeVars.op = "off";
       }
       return xyeVars.op;
