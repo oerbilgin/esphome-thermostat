@@ -3,7 +3,14 @@ esphome:
   friendly_name: Simulated HVAC Thermostat
 
 logger:
-  level: DEBUG
+  level: VERY_VERBOSE
+  initial_level: DEBUG
+  logs:
+    # sensor: VERBOSE
+    # select: DEBUG
+    # number: VERBOSE
+    climate: VERY_VERBOSE
+
 
 packages:
   main_ui: !include modules/thermostat_ui.yaml
@@ -35,7 +42,7 @@ touchscreen:
 number: 
 # these are for simulating new data from the midea unit
   - platform: template
-    name: "Fan Bytes"
+    name: "Simulated xyeVars.fanBytes"
     id: fanBytes
     step: 1
     mode: box
@@ -49,7 +56,7 @@ number:
           xyeVars.fanBytes = x;
 
   - platform: template
-    name: "Op Bytes"
+    name: "Simulated xyeVars.opBytes"
     id: opBytes
     step: 1
     mode: box
@@ -63,7 +70,7 @@ number:
           xyeVars.opBytes = x;
 
   - platform: template
-    name: "Set Temp"
+    name: "Simulated xyeVars.setTemp"
     id: setTemp
     step: 1
     mode: box

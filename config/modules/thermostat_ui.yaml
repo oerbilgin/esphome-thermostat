@@ -173,6 +173,37 @@ script:
   then:
     - if:
         condition:
+          lambda: 'return mode == "off";'
+        then:
+          - lvgl.widget.update:
+              id: off_mode_button
+              state:
+                checked: true
+          - lvgl.widget.update:
+              id:
+                - cool_mode_button
+                - heat_mode_button
+                - fan_mode_button
+                - auto_mode_button
+              state:
+                checked: false
+          - lvgl.label.update:
+              id: hvac_mode_label
+              text: ""
+          - lvgl.widget.show:
+              - off_mode_label
+              - off_mode_thermostat
+          - lvgl.widget.hide:
+              - setpoint
+              - cool_mode_thermostat
+              - heat_mode_thermostat
+              - fan_mode_thermostat
+              - auto_mode_thermostat
+              - fan_selector
+              - hvac_status_label
+              - next_hvac_mode
+    - if:
+        condition:
           lambda: 'return mode == "cool";'
         then:
           - lvgl.widget.update:
@@ -191,19 +222,15 @@ script:
               id: hvac_mode_label
               text: "Cool Setpoint"
           - lvgl.widget.hide:
-              id: heat_mode_thermostat
-          - lvgl.widget.hide:
-              id: fan_mode_thermostat
-          - lvgl.widget.hide:
-              id: auto_mode_thermostat
-          - lvgl.widget.hide:
-              id: off_mode_thermostat
+              - heat_mode_thermostat
+              - fan_mode_thermostat
+              - auto_mode_thermostat
+              - off_mode_thermostat
+              - off_mode_label
           - lvgl.widget.show:
-              id: cool_mode_thermostat
-          - lvgl.widget.show:
-              id: setpoint
-          - lvgl.widget.show:
-              id: fan_selector
+              - cool_mode_thermostat
+              - setpoint
+              - fan_selector
     - if:
         condition:
           lambda: 'return mode == "heat";'
@@ -224,19 +251,15 @@ script:
               id: hvac_mode_label
               text: "Heat Setpoint"
           - lvgl.widget.hide:
-              id: cool_mode_thermostat
-          - lvgl.widget.hide:
-              id: fan_mode_thermostat
-          - lvgl.widget.hide:
-              id: auto_mode_thermostat
-          - lvgl.widget.hide:
-              id: off_mode_thermostat
+              - cool_mode_thermostat
+              - fan_mode_thermostat
+              - auto_mode_thermostat
+              - off_mode_thermostat
+              - off_mode_label
           - lvgl.widget.show:
-              id: heat_mode_thermostat
-          - lvgl.widget.show:
-              id: setpoint
-          - lvgl.widget.show:
-              id: fan_selector
+              - heat_mode_thermostat
+              - setpoint
+              - fan_selector
     - if:
         condition:
           lambda: 'return mode == "fan_only";'
@@ -253,62 +276,17 @@ script:
                 - off_mode_button
               state:
                 checked: false
-          - lvgl.label.update:
-              id: hvac_mode_label
-              text: "Fan"
           - lvgl.widget.hide:
-              id: cool_mode_thermostat
-          - lvgl.widget.hide:
-              id: heat_mode_thermostat
-          - lvgl.widget.hide:
-              id: auto_mode_thermostat
-          - lvgl.widget.hide:
-              id: off_mode_thermostat
+              - cool_mode_thermostat
+              - heat_mode_thermostat
+              - auto_mode_thermostat
+              - off_mode_thermostat
+              - off_mode_label
+              - hvac_mode_label
           - lvgl.widget.show:
-              id: fan_mode_thermostat
-          - lvgl.widget.show:
-              id: fan_selector
-          - lvgl.widget.hide:
-              id: setpoint
-    - if:
-        condition:
-          lambda: 'return mode == "off";'
-        then:
-          - lvgl.widget.update:
-              id: off_mode_button
-              state:
-                checked: true
-          - lvgl.widget.update:
-              id:
-                - cool_mode_button
-                - heat_mode_button
-                - fan_mode_button
-                - auto_mode_button
-              state:
-                checked: false
-          - lvgl.label.update:
-              id: hvac_mode_label
-              text: ""
-          - lvgl.widget.show:
-              id: off_mode_label
-          - lvgl.widget.show:
-              id: off_mode_thermostat
-          - lvgl.widget.hide:
-              id: setpoint
-          - lvgl.widget.hide:
-              id: cool_mode_thermostat
-          - lvgl.widget.hide:
-              id: heat_mode_thermostat
-          - lvgl.widget.hide:
-              id: fan_mode_thermostat
-          - lvgl.widget.hide:
-              id: auto_mode_thermostat
-          - lvgl.widget.hide:
-              id: fan_selector
-          - lvgl.widget.hide:
-              id: hvac_status_label
-          - lvgl.widget.hide:
-              id: next_hvac_mode
+              - fan_mode_thermostat
+              - fan_selector
+              - setpoint
     - if:
         condition:
           lambda: 'return mode == "auto";'
@@ -329,19 +307,15 @@ script:
               id: hvac_mode_label
               text: "Auto"
           - lvgl.widget.hide:
-              id: cool_mode_thermostat
-          - lvgl.widget.hide:
-              id: heat_mode_thermostat
-          - lvgl.widget.hide:
-              id: fan_mode_thermostat
-          - lvgl.widget.hide:
-              id: off_mode_thermostat
+              - cool_mode_thermostat
+              - heat_mode_thermostat
+              - fan_mode_thermostat
+              - off_mode_thermostat
+              - off_mode_label
           - lvgl.widget.show:
-              id: auto_mode_thermostat
-          - lvgl.widget.show:
-              id: fan_selector
-          - lvgl.widget.hide:
-              id: setpoint
+              - auto_mode_thermostat
+              - fan_selector
+              - setpoint
 
 - id: update_fan_mode_ui
   mode: restart
@@ -384,8 +358,10 @@ script:
 
 number:
   - platform: template
-    id: setpoint_value
-    name: "Setpoint Value"
+    id: visible_setpoint_value
+    name: "Setpoint"
+    unit_of_measurement: "°F"
+    device_class: temperature
     min_value: $thermostat_arc_min_value
     max_value: $thermostat_arc_max_value
     step: 1
@@ -393,6 +369,11 @@ number:
     initial_value: $initial_setpoint_value
     restore_value: true
     set_action:
+      - logger.log:
+          format: "Setpoint changed to %.1f, entered set_action"
+          args: x
+          level: DEBUG
+          tag: "thermostat_ui"
       - globals.set:
           id: setpoint_updating
           value: 'true'
@@ -402,6 +383,36 @@ number:
       - lvgl.label.update:
           id: setpoint_number
           text: !lambda 'return to_string((int)x) + "°F";'
+      - lambda: |-
+            // NOTE: This is one directional; if someone changes the internal setpoint
+            // Custom logic to get the controller to get to the desired temperature.
+            // calculate the error between the actual temp and the t1 temp
+            float error = id(t1).state - id(average_house_temperature).state;
+            ESP_LOGD("mideaXYE","t1: %f, actual: %f, error: %f",id(t1).state,id(average_house_temperature).state,error);
+
+            // add the error to the visible setpoint to get the internal setpoint
+            // Ex1: if t1 sees 70 and its actually 75, the error is -5
+            // Ex1: if my setpoint is 75, the handler should be off
+            // Ex1: internal setpoint = 75 + -5 = 70, so the handler will not turn on
+
+            // Ex2: if t1 sees 80 and its actually 75, the error is +5
+            // Ex2: if my setpoint is 80, the handler should be on
+            // Ex2: internal setpoint = 80 + 5 = 85, so the handler will turn on to heat
+
+            // Ex3: if t1 sees 70 and its actually 75, the error is -5
+            // Ex3: my setpoint is 70, the handler should be on
+            // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
+            float internal_setpoint = x + error;
+            ESP_LOGD("mideaXYE","visible setpoint: %f, new internal setpoint: %f",x,internal_setpoint);
+
+            // convert to uint8_t for sending to the midea unit
+            uint8_t internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
+            ESP_LOGD("mideaXYE","internal setpoint int: %d",internal_setpoint_int);
+
+            // set the global variable for sending to the midea unit
+            xyeVars.setTemp = internal_setpoint_int;
+            xyeVars.newInput = true;
+
       - globals.set:
           id: setpoint_updating
           value: 'false'
@@ -532,6 +543,8 @@ sensor:
   # TODO: guard against unavailable
   - platform: homeassistant
     id: temperature_today
+    unit_of_measurement: "°F"
+    device_class: temperature
     entity_id: sensor.nws_now_forecast
     internal: true
     attribute: temperature
@@ -581,6 +594,8 @@ sensor:
   # TODO: guard against unavailable
   - platform: homeassistant
     id: temperature_next
+    unit_of_measurement: "°F"
+    device_class: temperature
     entity_id: sensor.nws_next_forecast
     internal: true
     attribute: temperature
@@ -631,6 +646,8 @@ sensor:
   - platform: homeassistant
     id: outside_temp_sensor
     entity_id: sensor.average_outside_temperature
+    unit_of_measurement: "°F"
+    device_class: temperature
     internal: true
     on_value:
       then:
@@ -910,38 +927,10 @@ lvgl:
                   text_color: !lambda 'return my_colors::main_text_color;'
                   # FIXME: auto mode is disabled for now
                   hidden: true
-                  # checkable: true 
-                  # on_click:
-                  #   - lvgl.widget.update:
-                  #       id: auto_mode_button
-                  #       state:
-                  #         checked: true
-                  #   - lvgl.widget.update:
-                  #       id: 
-                  #         - cool_mode_button
-                  #         - heat_mode_button
-                  #         - fan_mode_button
-                  #         - off_mode_button
-                  #       state:
-                  #         checked: false
-                  #  - lvgl.widget.hide:
-                  #       id: off_mode_label
-                  #   - lvgl.widget.show:
-                  #       id: auto_mode_thermostat
-                  #   - lvgl.widget.hide:
-                  #       id: turbo_button
-                  #   - lvgl.widget.hide:
-                  #       id: cool_mode_thermostat
-                  #   - lvgl.widget.hide:
-                  #       id: heat_mode_thermostat
-                  #   - lvgl.widget.hide:
-                  #       id: fan_mode_thermostat
-                  #   - lvgl.widget.hide:
-                  #       id: setpoint
-                  #   - lvgl.widget.hide:
-                  #       id: off_mode_thermostat
-                  #   - lvgl.widget.show:
-                  #       id: fan_selector
+                  on_click:
+                    - select.set:
+                        id: opMode
+                        option: "auto"
                   widgets:
                     - label:
                         id: auto_mode_icon
@@ -1331,7 +1320,7 @@ lvgl:
                   y: 80
                   width: 130
                   height: 45
-                  text: "OFF"
+                  text: "---"
                   text_color: !lambda 'return my_colors::text_dark_gray;'
                   text_align: CENTER
                   text_font: montserrat_34
@@ -1380,10 +1369,7 @@ lvgl:
                           lambda: 'return !id(setpoint_updating);'
                         then:
                           - number.set:
-                              id: setpoint_value
-                              value: !lambda 'return x;'
-                          - number.set:
-                              id: setPoint
+                              id: visible_setpoint_value
                               value: !lambda 'return x;'
                   bg_opa: 0%
 
@@ -1602,7 +1588,7 @@ lvgl:
             text_color: !lambda 'return my_colors::main_text_color;'
             on_click:
               - number.increment:
-                  id: setpoint_value
+                  id: visible_setpoint_value
                   cycle: true
             widgets:
               - label:
@@ -1628,7 +1614,7 @@ lvgl:
             text_color: !lambda 'return my_colors::main_text_color;'
             on_click:
               - number.decrement:
-                  id: setpoint_value
+                  id: visible_setpoint_value
                   cycle: true
             widgets:
               - label:
