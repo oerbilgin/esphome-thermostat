@@ -8,7 +8,7 @@ namespace my_colors {
     lv_color_t main_text_color = lv_color_hex(0x1F2937);
 
     lv_color_t text_dark_gray = lv_color_hex(0x6B7280);
-    lv_color_t text_light_gray = lv_color_hex(0xC3C4C6);
+    lv_color_t text_light_gray = lv_color_hex(0xC3C4C6); // also used for a pending/broken data card state
 
     // thermostats and buttons
     lv_color_t button_bg_color = lv_color_hex(0xE5E7EB);
@@ -128,7 +128,10 @@ lv_color_t get_temp_text_color(float temp) {
 lv_color_t get_aqi_text_color(float val) {
     ESP_LOGD("get_aqi_text_color", "Input is %f", val);
 
-    if (val < 50) {
+    if (std::isnan(val) || val < 0) {
+        ESP_LOGW("get_aqi_text_color", "AQI input was invalid: %f", val);
+        return my_colors::text_red;
+    } else if (val < 50) {
         return my_colors::text_green;
     } else if (val < 100) {
         return my_colors::text_yellow;
@@ -145,8 +148,11 @@ lv_color_t get_aqi_text_color(float val) {
 
 lv_color_t get_aqi_bg_color(float val) {
     ESP_LOGD("get_aqi_bg_color", "Input is %f", val);
-
-    if (val < 50) {
+    
+    if (std::isnan(val) || val < 0) {
+        ESP_LOGW("get_aqi_text_color", "AQI input was invalid: %f", val);
+        return my_colors::text_light_gray;
+    } else if (val < 50) {
         return my_colors::bg_green;
     } else if (val < 100) {
         return my_colors::bg_yellow;

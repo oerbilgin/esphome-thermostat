@@ -25,11 +25,15 @@ esphome:
 json:
 
 substitutions:
-  thermostat_x_pos: 390
-  thermostat_y_pos: 10
-  thermostat_arc_x_pos: 0
+  thermostat_box_x_pos: 382
+  thermostat_box_y_pos: 10
+  thermostat_box_width: 418
+  thermostat_box_height: 400
+  thermostat_arc_width: 400
+  thermostat_arc_height: 400
+  thermostat_arc_x_pos: 8
   thermostat_arc_y_pos: 10
-  thermostat_arc_width: 48
+  thermostat_indicator_arc_width: 48
   thermostat_setpoint_knob_size: 8
   thermostat_actual_knob_size: -4
   thermostat_arc_min_value: 55
@@ -433,13 +437,12 @@ number:
     restore_value: true
     set_action:
       - logger.log:
-          format: "Setpoint changed to %.1f, entered set_action"
+          format: "visible_setpoint_value changed to %.1f, entered set_action"
           args: x
           level: DEBUG
           tag: "thermostat_ui"
       - script.execute: 
           id: update_setpoints
-          visible_setpoint: x
 
 sensor:
   # AQI
@@ -1021,10 +1024,10 @@ lvgl:
             text_font: montserrat_24
         - obj:
             id: heat_mode_thermostat
-            x: $thermostat_x_pos
-            y: $thermostat_y_pos
-            width: 400
-            height: 400
+            x: $thermostat_box_x_pos
+            y: $thermostat_box_y_pos
+            width: $thermostat_box_width
+            height: $thermostat_box_height
             hidden: true
             bg_opa: 0%
             border_width: 0
@@ -1038,8 +1041,8 @@ lvgl:
                   id: heat_arc_actual_temp
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: 0
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -1047,12 +1050,12 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
                     arc_color: !lambda 'return my_colors::arc_heat_indicator;'
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 100%
                     arc_rounded: true
                   knob:
@@ -1065,10 +1068,10 @@ lvgl:
 
         - obj:
             id: auto_mode_thermostat
-            x: $thermostat_x_pos
-            y: $thermostat_y_pos
-            width: 400
-            height: 400
+            x: $thermostat_box_x_pos
+            y: $thermostat_box_y_pos
+            width: $thermostat_box_width
+            height: $thermostat_box_height
             hidden: true
             bg_opa: 0%
             border_width: 0
@@ -1082,8 +1085,8 @@ lvgl:
                   id: auto_heat_arc_actual_temp
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: 0
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -1091,12 +1094,12 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 0%
                   arc_rounded: true
                   indicator:
                     arc_color: !lambda 'return my_colors::arc_heat_indicator;'
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 100%
                     arc_rounded: false
                   knob:
@@ -1150,8 +1153,8 @@ lvgl:
                   id: auto_cool_arc_actual_temp
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: 0
                   mode: REVERSE
                   min_value: $thermostat_arc_min_value
@@ -1160,12 +1163,12 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 0%
                   arc_rounded: true
                   indicator:
                     arc_color: !lambda 'return my_colors::arc_cool_indicator;'
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 100%
                     arc_rounded: false
                   knob:
@@ -1178,10 +1181,10 @@ lvgl:
 
         - obj:
             id: cool_mode_thermostat
-            x: $thermostat_x_pos
-            y: $thermostat_y_pos
-            width: 400
-            height: 400
+            x: $thermostat_box_x_pos
+            y: $thermostat_box_y_pos
+            width: $thermostat_box_width
+            height: $thermostat_box_height
             hidden: true
             bg_opa: 0%
             border_width: 0
@@ -1195,8 +1198,8 @@ lvgl:
                   id: cool_arc_actual_temp
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: 0
                   mode: REVERSE
                   min_value: $thermostat_arc_min_value
@@ -1205,12 +1208,12 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
                     arc_color: !lambda 'return my_colors::arc_cool_indicator;'
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 100%
                     arc_rounded: true
                   knob:
@@ -1223,10 +1226,10 @@ lvgl:
               
         - obj:
             id: off_mode_thermostat
-            x: $thermostat_x_pos
-            y: $thermostat_y_pos
-            width: 400
-            height: 400
+            x: $thermostat_box_x_pos
+            y: $thermostat_box_y_pos
+            width: $thermostat_box_width
+            height: $thermostat_box_height
             bg_opa: 0%
             border_width: 1
             border_opa: 0%
@@ -1239,8 +1242,8 @@ lvgl:
                   id: off_mode_arc
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: 100
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -1248,21 +1251,21 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
                     arc_color: !lambda 'return my_colors::arc_bg_color;'
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 100%
                     arc_rounded: true
                   bg_opa: 0%
         - obj:
             id: fan_mode_thermostat
-            x: $thermostat_x_pos
-            y: $thermostat_y_pos
-            width: 400
-            height: 400
+            x: $thermostat_box_x_pos
+            y: $thermostat_box_y_pos
+            width: $thermostat_box_width
+            height: $thermostat_box_height
             hidden: true
             bg_opa: 0%
             border_width: 1
@@ -1296,8 +1299,8 @@ lvgl:
                   id: fan_mode_arc
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: $thermostat_arc_max_value
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -1305,12 +1308,12 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 100%
                   arc_rounded: true
                   indicator:
                     arc_color: !lambda 'return my_colors::arc_fan_indicator;'
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 100%
                     arc_rounded: true
                   bg_opa: 0%
@@ -1326,10 +1329,10 @@ lvgl:
             text_font: montserrat_48
         - obj:
             id: setpoint
-            x: $thermostat_x_pos
-            y: $thermostat_y_pos
-            width: 400
-            height: 400
+            x: $thermostat_box_x_pos
+            y: $thermostat_box_y_pos
+            width: $thermostat_box_width
+            height: $thermostat_box_height
             bg_opa: 0%
             border_width: 0
             border_opa: 0%
@@ -1362,8 +1365,8 @@ lvgl:
                   id: setpoint_arc
                   x: $thermostat_arc_x_pos
                   y: $thermostat_arc_y_pos
-                  width: 400
-                  height: 400
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
                   value: $initial_setpoint_value
                   min_value: $thermostat_arc_min_value
                   max_value: $thermostat_arc_max_value
@@ -1371,11 +1374,11 @@ lvgl:
                   start_angle: 135
                   end_angle: 45
                   arc_color: !lambda 'return my_colors::arc_bg_color;'
-                  arc_width: $thermostat_arc_width
+                  arc_width: $thermostat_indicator_arc_width
                   arc_opa: 0%
                   arc_rounded: true
                   indicator:
-                    arc_width: $thermostat_arc_width
+                    arc_width: $thermostat_indicator_arc_width
                     arc_opa: 0%
                     arc_rounded: true
                   knob:
