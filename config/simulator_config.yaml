@@ -119,3 +119,21 @@ number:
           ESP_LOGD("simulator_config", "xyeVars.recData[%i] is now 0x%02x", REC_FAN, xyeVars.recData[REC_FAN]);
           xyeVars.fanBytes = x;
           ESP_LOGD("simulator_config", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_FAN]);
+  - platform: template
+    name: "Simulated opmode"
+    id: opmode_sim
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 255
+    set_action:
+      - logger.log:
+          format: "Simulated opmode set to %f, updating xyeVars.recData"
+          args: x
+          level: DEBUG
+          tag: simulator_config
+      - lambda: |-
+          xyeVars.recData[REC_MODE] = x;
+          ESP_LOGD("simulator_config", "xyeVars.recData[%i] is now 0x%02x", REC_MODE, xyeVars.recData[REC_MODE]);
+          xyeVars.opBytes = x;
+          ESP_LOGD("simulator_config", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_MODE]);
