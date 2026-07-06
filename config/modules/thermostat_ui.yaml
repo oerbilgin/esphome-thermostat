@@ -61,6 +61,7 @@ select:
 script:
 - id: update_setpoints
   mode: restart
+  # make this the parameter so it can be used by set_action, which shows the new value; id(visible_setpoint_value).state is the old value
   parameters:
     visible_setpoint: float
   then:
@@ -443,6 +444,7 @@ number:
           tag: "thermostat_ui"
       - script.execute: 
           id: update_setpoints
+          visible_setpoint: x
 
 sensor:
   # AQI

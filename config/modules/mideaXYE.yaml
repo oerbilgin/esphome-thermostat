@@ -12,7 +12,6 @@ substitutions:
 # if nothing more comes in then it dumps the data
 # Last, it checks if there was data waiting to be sent and sends that data after reading.
 sensor:
-
   - platform: template
     name: "Inlet Air Temperature"
     unit_of_measurement: "°F"
@@ -22,6 +21,16 @@ sensor:
     device_class: temperature
     lambda: |-
       return xyeVars.recData[T1_INDEX];
+    on_value: 
+      then:
+        - logger.log:
+            format: "t1 emperature changed to %.1f, executing update_setpoints script"
+            args: x
+            level: DEBUG
+            tag: "mideaXYE"
+        - script.execute:
+            id: update_setpoints
+            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
 
 
 # this is the temperature of the refrigerant coming into the air handler from the compressor
@@ -111,6 +120,9 @@ select:
           break;
         case 0x03:
           xyeVars.fan = "low";
+          break;
+        case 0x00:
+          xyeVars.fan = "auto"; // this is the initial state on device startup before it receives any data
           break;
         // case 0x81:
         //   xyeVars.fan = "turbo"; // only in cool mode

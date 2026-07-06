@@ -82,3 +82,19 @@ number:
     set_action:
       - lambda: |-
           xyeVars.setTemp = x;
+  
+  - platform: template
+    name: "Simulated T1 temp"
+    id: t1_sim
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 100
+    set_action:
+      - logger.log:
+          format: "Simulated t1 temp set to %f"
+          args: x
+          level: DEBUG
+          tag: simulator_config
+      - lambda: |-
+          xyeVars.recData[T1_INDEX] = x;
