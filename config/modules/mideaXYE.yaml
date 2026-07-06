@@ -120,24 +120,6 @@ text_sensor:
       return {"E1: " + std::to_string(xyeVars.recData[REC_E1]) + " E2: " + std::to_string(xyeVars.recData[REC_E2])};
 
   - platform: template
-    name: "Full data string"
-    update_interval: $aux_update_interval
-    lambda: |-
-      std::ostringstream oss;
-      oss << std::uppercase << std::hex << std::setfill('0');
-      uint8_t i;
-      for (i=0;i<(sizeof(xyeVars.recData) / sizeof(xyeVars.recData[0]));i++)
-      {
-        if (i>0)
-        {
-          oss << ' ';
-        }
-        oss << "0x";
-        oss << std::setw(2) << static_cast<int>(xyeVars.recData[i]);
-      }
-      return {oss.str()};
-
-  - platform: template
     name: Fan Status
     id: fanStatus
     lambda: |-
