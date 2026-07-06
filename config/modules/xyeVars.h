@@ -37,7 +37,7 @@ class xyeVars {
     uint8_t sendTimeCount = 0;
     bool newInput = false;
     std::string op = "off";
-    std::string fan = "auto";
+    std::string fanMode = "auto";
     uint8_t fanBytes = 0x00;
     uint8_t opBytes = 0x00;
     bool doneReading = false;

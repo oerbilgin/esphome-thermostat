@@ -6,6 +6,50 @@ substitutions:
   sensor_update_interval: 1s
   aux_update_interval: 15s
 
+interval:
+  # update sensors
+  - interval: $sensor_update_interval
+    then:
+      - lambda: |-
+          // publish sensor states only if recdata is different (i.e. only on new values)
+          // publishing state skips the set_action, but not on_value
+          if (id(t1).state != xyeVars.recData[T1_INDEX]) {
+            ESP_LOGI("mideaXYE", "t1 state has changed from %f to %u", id(t1).state, xyeVars.recData[T1_INDEX]);
+            id(t1).publish_state(xyeVars.recData[T1_INDEX]);
+          }
+
+          if (id(t2a).state != xyeVars.recData[T2A_INDEX]) {
+            ESP_LOGI("mideaXYE", "t2a state has changed from %f to %u", id(t2a).state, xyeVars.recData[T2A_INDEX]);
+            id(t2a).publish_state(xyeVars.recData[T2A_INDEX]);
+          }
+
+          if (id(t2b).state != xyeVars.recData[T2B_INDEX]) {
+            ESP_LOGI("mideaXYE", "t2b state has changed from %f to %u", id(t2b).state, xyeVars.recData[T2B_INDEX]);
+            id(t2b).publish_state(xyeVars.recData[T2B_INDEX]);
+          }
+
+          if (id(t3).state != xyeVars.recData[T3_INDEX]) {
+            ESP_LOGI("mideaXYE", "t3 state has changed from %f to %u", id(t3).state, xyeVars.recData[T3_INDEX]);
+            id(t3).publish_state(xyeVars.recData[T3_INDEX]);
+          }
+
+          if (id(fanBytes).state != xyeVars.recData[REC_FAN]) {
+            ESP_LOGI("mideaXYE", "fanBytes state has changed from %f to %u", id(fanBytes).state, xyeVars.recData[REC_FAN]);
+            id(fanBytes).publish_state(xyeVars.recData[REC_FAN]);
+
+            // update the fanmode and fanstatus text sensors
+            id(fanStatus).update();
+            id(fanMode).update();
+          }
+
+          if (id(modeBytes).state != xyeVars.recData[REC_MODE]) {
+            ESP_LOGI("mideaXYE", "modeBytes state has changed from %f to %u", id(modeBytes).state, xyeVars.recData[REC_MODE]);
+            id(modeBytes).publish_state(xyeVars.recData[REC_MODE]);
+
+            // update the mode text sensor
+            id(opMode).update();
+          }
+
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
 # A response is always 32 bytes of data, but only the first 30 are useful.
 # If we happen to check the buffer midstream then this will skip that cycle and finish reading it on the next cycle.
@@ -15,12 +59,8 @@ sensor:
   - platform: template
     name: "Inlet Air Temperature"
     unit_of_measurement: "°F"
-    #unit_of_measurement: "°C"
     id: t1
-    update_interval: $sensor_update_interval
     device_class: temperature
-    lambda: |-
-      return xyeVars.recData[T1_INDEX];
     on_value: 
       then:
         - logger.log:
@@ -38,32 +78,35 @@ sensor:
 # otherwise it should drift close to ambient or T1
   - platform: template
     name: "Coil A Temperature"
+    id: t2a
     unit_of_measurement: "°F"
-    #unit_of_measurement: "°C"
-    update_interval: $sensor_update_interval
     device_class: temperature
-    lambda: |-
-      return xyeVars.recData[T2A_INDEX];
 
   - platform: template
     name: "Coil B Temperature"
+    id: t2b
     unit_of_measurement: "°F"
-    #unit_of_measurement: "°C"
-    update_interval: $sensor_update_interval
     device_class: temperature
-    lambda: |-
-      return xyeVars.recData[T2B_INDEX];
 
 # I don't think this is truly outside temperature. I think it's exhaust air temperature
 # from the compressor outside which is ambient when it's not running.
   - platform: template
     name: "Outside Air Temperature"
+    id: t3
     unit_of_measurement: "°F"
-    #unit_of_measurement: "°C"
-    update_interval: $sensor_update_interval
     device_class: temperature
-    lambda: |-
-      return xyeVars.recData[T3_INDEX];
+
+# internal helper sensor to track the state of the fan bytes
+  - platform: template
+    name: Fan Bytes Sensor
+    id: fanBytes
+    internal: True
+
+# internal helper sensor to track the state of the opmode bytes
+  - platform: template
+    name: OpMode Bytes Sensor
+    id: modeBytes
+    internal: True
 
 # the 2 error code registers combined in one message. it's just the code number,
 # you will need the service manual to decode them probably. I haven't tested any error
@@ -93,13 +136,51 @@ text_sensor:
         oss << std::setw(2) << static_cast<int>(xyeVars.recData[i]);
       }
       return {oss.str()};
+
+  - platform: template
+    name: Fan Status
+    id: fanStatus
+    lambda: |-
+      // update the fan status
+      // define the options
+      std::vector<uint8_t> off_status = {0x00, 0x80};
+      std::vector<uint8_t> low_status = {0x04, 0x84};
+      std::vector<uint8_t> med_status = {0x02, 0x82};
+      std::vector<uint8_t> high_status = {0x01, 0x81};
+
+      // cast fanBytes back to uint8
+      uint8_t fanBytes = xyeVars.recData[REC_FAN];
+
+      // assert fanbytes == xyeVars.fanBytes
+      if (fanBytes != xyeVars.fanBytes) {
+        ESP_LOGE("mideaXYE", "xyeVars.recData[REC_FAN] (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytes, xyeVars.fanBytes);
+        return "err";
+      } else {
+        // set the fanStatus
+        // std::find returns numbers.end() if the value isn't found
+        if (std::find(off_status.begin(), off_status.end(), fanBytes) != off_status.end()) {
+            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means OFF", fanBytes);
+            return "Off";
+        } else if (std::find(low_status.begin(), low_status.end(), fanBytes) != low_status.end()) {
+            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means LOW", fanBytes);
+             return "Low";
+        } else if (std::find(med_status.begin(), med_status.end(), fanBytes) != med_status.end()) {
+            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means MED", fanBytes);
+            return "Med";
+        } else if (std::find(high_status.begin(), high_status.end(), fanBytes) != high_status.end()) {
+            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means HIGH", fanBytes);
+            return "High";
+        } else {
+          ESP_LOGE("mideaXYE", "fanBytes is 0x%02x, and could not determine what this means!");
+          return "err";
+        }
+      }
       
 
 select:
   - platform: template
     name: "Fan Mode"
     id: fanMode
-    update_interval: $sensor_update_interval
     options:
       - 'low'
       - 'medium'
@@ -107,45 +188,41 @@ select:
       - 'auto'
       
     lambda: |-
-      switch (xyeVars.fanBytes)
-      {
-        case 0x80: // 80 seems to be auto with fan off, ive also seen 81 (turbo in cool mode), 82, 84 (in cool mode). perhaps has to do with actual fan speed
-          xyeVars.fan = "auto";
-          break;
-        case 0x01:
-          xyeVars.fan = "high";
-          break;
-        case 0x02:
-          xyeVars.fan = "medium";
-          break;
-        case 0x03:
-          xyeVars.fan = "low";
-          break;
-        case 0x00:
-          xyeVars.fan = "auto"; // this is the initial state on device startup before it receives any data
-          break;
-        // case 0x81:
-        //   xyeVars.fan = "turbo"; // only in cool mode
-        //   break;
-        default:
-          ESP_LOGE("mideaXYE","xyeVars.fan defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
-          xyeVars.fan = "auto";
+      std::vector<uint8_t> auto_modes = {0x80, 0x81, 0x82, 0x84};
+
+      if (xyeVars.fanBytes == 0x01) {
+        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to high",xyeVars.fanBytes);
+        xyeVars.fanMode = "high";
+      } else if (xyeVars.fanBytes == 0x02) {
+        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to medium",xyeVars.fanBytes);
+        xyeVars.fanMode = "medium";
+      } else if (xyeVars.fanBytes == 0x04) {
+        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to low",xyeVars.fanBytes);
+        xyeVars.fanMode = "low";
+      } else if (std::find(auto_modes.begin(), auto_modes.end(), xyeVars.fanBytes) != auto_modes.end()) {
+        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to auto",xyeVars.fanBytes);
+        xyeVars.fanMode = "auto";
+      } else if (xyeVars.fanBytes == 0x00) {
+        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",xyeVars.fanBytes, id(fanMode).state.c_str());
+      } else {
+        ESP_LOGE("mideaXYE","xyeVars.fanMode defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
+        xyeVars.fanMode = "auto";
       }
-      return xyeVars.fan;
+      return xyeVars.fanMode;
     set_action: 
       - lambda: |-
-          if (xyeVars.fan != x)
+          if (xyeVars.fanMode != x)
           {
-            xyeVars.fan = x;
+            xyeVars.fanMode = x;
             ESP_LOGI("mideaXYE","change fan to: %s",x.str().c_str());
-            if (xyeVars.fan == "high"){
+            if (xyeVars.fanMode == "high"){
               xyeVars.fanBytes = 0x01;
-            } else if (xyeVars.fan == "auto"){
+            } else if (xyeVars.fanMode == "auto"){
               xyeVars.fanBytes = 0x80;
-            } else if (xyeVars.fan == "medium"){
+            } else if (xyeVars.fanMode == "medium"){
               xyeVars.fanBytes = 0x02;
-            } else if (xyeVars.fan == "low"){
-              xyeVars.fanBytes = 0x03;
+            } else if (xyeVars.fanMode == "low"){
+              xyeVars.fanBytes = 0x04;
             } else {
               xyeVars.fanBytes = 0x80;
               ESP_LOGE("mideaXYE","Defaulting to auto, invalid fan input: %s",x.str().c_str());
@@ -163,7 +240,6 @@ select:
   - platform: template
     id: opMode
     name: "Operating Mode"
-    update_interval: $sensor_update_interval
     options:
       - 'off'
       - 'auto'
@@ -173,6 +249,7 @@ select:
       - 'fan_only'
       # need to add switch case for updating the value based off xyeVars.opBytes
     lambda: |-
+      ESP_LOGD("mideaXYE", "Entering opMode lambda. xyeVars.opBytes is 0x%02x", xyeVars.opBytes);
       switch (xyeVars.opBytes)
       {
         case 0x00:
@@ -197,6 +274,7 @@ select:
           ESP_LOGE("mideaXYE","xyeVars.op defaulting to off, invalid mode input: %02X",xyeVars.opBytes);
           xyeVars.op = "off";
       }
+      ESP_LOGD("mideaXYE", "xyeVars.op is %s", xyeVars.op.c_str());
       return xyeVars.op;
     set_action:
       - lambda: |-
