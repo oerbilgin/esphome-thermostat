@@ -145,7 +145,7 @@ text_sensor:
         result = "Cooling";
       } else if (fan_is_on) {
         result = "Diffusing";
-      } else result = "";
+      } else result = "Idle";
 
       // check that the status and mode match up
       if (result == "Heating" && (std::find(heating_modes.begin(), heating_modes.end(), hvac_mode) == heating_modes.end())) {

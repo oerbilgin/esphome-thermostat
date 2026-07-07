@@ -431,26 +431,34 @@ script:
       std::string hvac_status_str = id(hvac_status).state;
 
       ESP_LOGD("thermostat_ui", "Executing update_hvac_status_ui script, hvac_status_str is '%s'", hvac_status_str.c_str());
-
-      lv_label_set_text(id(hvac_status_label), hvac_status_str.c_str());
       
-      lv_color_t status_color;
+      lv_color_t status_text_color;
+      lv_color_t status_bg_color;
+      
+      // default set the font style to normal text
+      lv_obj_set_style_text_font(id(hvac_status_label), &lv_font_montserrat_30, LV_PART_MAIN);
 
       if (hvac_status_str == "Diffusing") {
-        status_color = my_colors::arc_fan_knob;
+        status_text_color = status_bg_color = my_colors::arc_fan_knob;
       } else if (hvac_status_str == "Cooling") {
-        status_color = my_colors::arc_cool_knob;
+        status_text_color = status_bg_color = my_colors::arc_cool_knob;
       } else if (hvac_status_str == "Heating") {
-        status_color = my_colors::arc_heat_knob;
-      } else if (hvac_status_str == "") {
-        status_color = my_colors::main_background_color;
+        status_text_color = status_bg_color = my_colors::arc_heat_knob;
+      } else if (hvac_status_str == "Idle") {
+        status_bg_color = my_colors::main_background_color;
+        status_text_color = my_colors::text_dark_gray;
       } else {
-        status_color = my_colors::main_background_color;
+        status_bg_color = my_colors::main_background_color;
+        status_text_color = my_colors::text_red;
+        hvac_status_str = "\U000F002A";
+        // set font to icons
+        lv_obj_set_style_text_font(id(hvac_status_label), mdi_icons_30->get_lv_font(), LV_PART_MAIN);
         ESP_LOGE("thermostat_ui", "unexpected hvac_status_str: '%s'!", hvac_status_str.c_str());
       }
-
-      lv_obj_set_style_text_color(id(hvac_status_label), status_color, LV_PART_MAIN);
-      lv_obj_set_style_bg_color(id(hvac_status_background), status_color, LV_PART_MAIN);
+      
+      lv_label_set_text(id(hvac_status_label), hvac_status_str.c_str());
+      lv_obj_set_style_text_color(id(hvac_status_label), status_text_color, LV_PART_MAIN);
+      lv_obj_set_style_bg_color(id(hvac_status_background), status_bg_color, LV_PART_MAIN);
 
       // force redraw
       lv_obj_invalidate(id(hvac_status_container));
@@ -822,6 +830,7 @@ font:
       "\U000F0E02",  # Thermometer Down
       "\U000F0E01",  # Thermometer Alert
       "\U000F0F29",  # Snowflake Alert
+      "\U000F002A",  # Triangle Alert
     ]
   - file:
       url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
