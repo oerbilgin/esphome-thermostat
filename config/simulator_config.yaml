@@ -6,9 +6,14 @@ logger:
   level: VERY_VERBOSE
   initial_level: DEBUG
   logs:
-    # sensor: VERBOSE
-    # select: DEBUG
-    # number: VERBOSE
+    sensor: DEBUG
+    # text_sensor: DEBUG
+    # select: VERBOSE
+    # button: VERBOSE
+    number: DEBUG
+    # script: VERBOSE
+    touchscreen: DEBUG
+    api.service: DEBUG
     climate: VERY_VERBOSE
 
 
