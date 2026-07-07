@@ -8,33 +8,34 @@ substitutions:
 
 interval:
   # update sensors
-  - interval: $sensor_update_interval
+  - id: update_sensors
+    interval: $sensor_update_interval
     then:
       - lambda: |-
           // publish sensor states only if recdata is different (i.e. only on new values)
           // publishing state skips the set_action, but not on_value
           if (id(t1).state != xyeVars.recData[T1_INDEX]) {
-            ESP_LOGI("mideaXYE", "t1 state has changed from %f to %u", id(t1).state, xyeVars.recData[T1_INDEX]);
+            ESP_LOGI("mideaXYE.update_sensors", "t1 state has changed from %f to %u", id(t1).state, xyeVars.recData[T1_INDEX]);
             id(t1).publish_state(xyeVars.recData[T1_INDEX]);
           }
 
           if (id(t2a).state != xyeVars.recData[T2A_INDEX]) {
-            ESP_LOGI("mideaXYE", "t2a state has changed from %f to %u", id(t2a).state, xyeVars.recData[T2A_INDEX]);
+            ESP_LOGI("mideaXYE.update_sensors", "t2a state has changed from %f to %u", id(t2a).state, xyeVars.recData[T2A_INDEX]);
             id(t2a).publish_state(xyeVars.recData[T2A_INDEX]);
           }
 
           if (id(t2b).state != xyeVars.recData[T2B_INDEX]) {
-            ESP_LOGI("mideaXYE", "t2b state has changed from %f to %u", id(t2b).state, xyeVars.recData[T2B_INDEX]);
+            ESP_LOGI("mideaXYE.update_sensors", "t2b state has changed from %f to %u", id(t2b).state, xyeVars.recData[T2B_INDEX]);
             id(t2b).publish_state(xyeVars.recData[T2B_INDEX]);
           }
 
           if (id(t3).state != xyeVars.recData[T3_INDEX]) {
-            ESP_LOGI("mideaXYE", "t3 state has changed from %f to %u", id(t3).state, xyeVars.recData[T3_INDEX]);
+            ESP_LOGI("mideaXYE.update_sensors", "t3 state has changed from %f to %u", id(t3).state, xyeVars.recData[T3_INDEX]);
             id(t3).publish_state(xyeVars.recData[T3_INDEX]);
           }
 
           if (id(fanBytes).state != xyeVars.recData[REC_FAN]) {
-            ESP_LOGI("mideaXYE", "fanBytes state has changed from %f to %u", id(fanBytes).state, xyeVars.recData[REC_FAN]);
+            ESP_LOGI("mideaXYE.update_sensors", "fanBytes state has changed from %f to %u", id(fanBytes).state, xyeVars.recData[REC_FAN]);
             id(fanBytes).publish_state(xyeVars.recData[REC_FAN]);
 
             // update the fanmode and fanstatus text sensors/selects
@@ -43,7 +44,7 @@ interval:
           }
 
           if (id(modeBytes).state != xyeVars.recData[REC_MODE]) {
-            ESP_LOGI("mideaXYE", "modeBytes state has changed from %f to %u", id(modeBytes).state, xyeVars.recData[REC_MODE]);
+            ESP_LOGI("mideaXYE.update_sensors", "modeBytes state has changed from %f to %u", id(modeBytes).state, xyeVars.recData[REC_MODE]);
             id(modeBytes).publish_state(xyeVars.recData[REC_MODE]);
 
             // update the mode select
@@ -68,7 +69,7 @@ sensor:
             format: "t1 emperature changed to %.1f, executing update_setpoints script"
             args: x
             level: DEBUG
-            tag: "mideaXYE"
+            tag: "mideaXYE.t1"
         - script.execute:
             id: update_setpoints
             visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
@@ -155,23 +156,23 @@ text_sensor:
 
       // check that the status and mode match up
       if (result == "Heating" && (std::find(heating_modes.begin(), heating_modes.end(), hvac_mode) == heating_modes.end())) {
-        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
         result = "Diffusing";
       } else if (result == "Cooling" && (std::find(cooling_modes.begin(), cooling_modes.end(), hvac_mode) == cooling_modes.end())) {
-        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
         result = "Diffusing";
       } else if (result == "Diffusing" && hvac_mode == "off") {
-        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to err.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to err.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
         result = "err";
       }
       
       // final check if the fan is actually on
       if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
-        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
         result = "err";
       }
 
-      ESP_LOGD("mideaXYE", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
+      ESP_LOGD("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
       return result;
     on_value:
       - script.execute: update_hvac_status_ui
@@ -202,25 +203,25 @@ text_sensor:
 
       // assert fanbytes == xyeVars.fanBytes
       if (fanBytes != xyeVars.fanBytes) {
-        ESP_LOGE("mideaXYE", "xyeVars.recData[REC_FAN] (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytes, xyeVars.fanBytes);
+        ESP_LOGE("mideaXYE.fanStatus", "xyeVars.recData[REC_FAN] (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytes, xyeVars.fanBytes);
         return "err";
       } else {
         // set the fanStatus
         // std::find returns numbers.end() if the value isn't found
         if (std::find(off_status.begin(), off_status.end(), fanBytes) != off_status.end()) {
-            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means OFF", fanBytes);
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means OFF", fanBytes);
             return "off";
         } else if (std::find(low_status.begin(), low_status.end(), fanBytes) != low_status.end()) {
-            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means LOW", fanBytes);
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means LOW", fanBytes);
              return "low";
         } else if (std::find(med_status.begin(), med_status.end(), fanBytes) != med_status.end()) {
-            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means MED", fanBytes);
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means MED", fanBytes);
             return "med";
         } else if (std::find(high_status.begin(), high_status.end(), fanBytes) != high_status.end()) {
-            ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means HIGH", fanBytes);
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means HIGH", fanBytes);
             return "high";
         } else {
-          ESP_LOGE("mideaXYE", "fanBytes is 0x%02x, and could not determine what this means!", fanBytes);
+          ESP_LOGE("mideaXYE.fanStatus", "fanBytes is 0x%02x, and could not determine what this means!", fanBytes);
           return "err";
         }
       }
@@ -243,21 +244,21 @@ select:
       std::vector<uint8_t> auto_modes = {0x80, 0x81, 0x82, 0x84};
 
       if (xyeVars.fanBytes == 0x01) {
-        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to high",xyeVars.fanBytes);
+        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to high",xyeVars.fanBytes);
         xyeVars.fanMode = "high";
       } else if (xyeVars.fanBytes == 0x02) {
-        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to medium",xyeVars.fanBytes);
+        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to medium",xyeVars.fanBytes);
         xyeVars.fanMode = "medium";
       } else if (xyeVars.fanBytes == 0x04) {
-        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to low",xyeVars.fanBytes);
+        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to low",xyeVars.fanBytes);
         xyeVars.fanMode = "low";
       } else if (std::find(auto_modes.begin(), auto_modes.end(), xyeVars.fanBytes) != auto_modes.end()) {
-        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to auto",xyeVars.fanBytes);
+        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to auto",xyeVars.fanBytes);
         xyeVars.fanMode = "auto";
       } else if (xyeVars.fanBytes == 0x00) {
-        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",xyeVars.fanBytes, id(fanMode).current_option().c_str());
+        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",xyeVars.fanBytes, id(fanMode).current_option().c_str());
       } else {
-        ESP_LOGE("mideaXYE","xyeVars.fanMode defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
+        ESP_LOGE("mideaXYE.fanMode","xyeVars.fanMode defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
         xyeVars.fanMode = "auto";
       }
       return xyeVars.fanMode;
@@ -266,7 +267,7 @@ select:
           if (xyeVars.fanMode != x)
           {
             xyeVars.fanMode = x;
-            ESP_LOGI("mideaXYE","change fan to: %s",x.str().c_str());
+            ESP_LOGI("mideaXYE.fanMode","change fan to: %s",x.str().c_str());
             if (xyeVars.fanMode == "high"){
               xyeVars.fanBytes = 0x01;
             } else if (xyeVars.fanMode == "auto"){
@@ -277,9 +278,9 @@ select:
               xyeVars.fanBytes = 0x04;
             } else {
               xyeVars.fanBytes = 0x80;
-              ESP_LOGE("mideaXYE","Defaulting to auto, invalid fan input: %s",x.str().c_str());
+              ESP_LOGE("mideaXYE.fanMode","Defaulting to auto, invalid fan input: %s",x.str().c_str());
             }
-            ESP_LOGI("mideaXYE","selected %x, pressing button to send",xyeVars.fanBytes);
+            ESP_LOGI("mideaXYE.fanMode","selected %x, pressing button to send",xyeVars.fanBytes);
             xyeVars.newInput = true;
             id(fanMode).publish_state(x);
           }
@@ -303,7 +304,7 @@ select:
       - 'fan_only'
       # need to add switch case for updating the value based off xyeVars.opBytes
     lambda: |-
-      ESP_LOGD("mideaXYE", "Entering opMode lambda. xyeVars.opBytes is 0x%02x", xyeVars.opBytes);
+      ESP_LOGD("mideaXYE.opMode", "Entering opMode lambda. xyeVars.opBytes is 0x%02x", xyeVars.opBytes);
       switch (xyeVars.opBytes)
       {
         case 0x00:
@@ -325,10 +326,10 @@ select:
           xyeVars.op = "fan_only";
           break;
         default:
-          ESP_LOGE("mideaXYE","xyeVars.op defaulting to off, invalid mode input: %02X",xyeVars.opBytes);
+          ESP_LOGE("mideaXYE.opMode","xyeVars.op defaulting to off, invalid mode input: %02X",xyeVars.opBytes);
           xyeVars.op = "off";
       }
-      ESP_LOGD("mideaXYE", "xyeVars.op is %s", xyeVars.op.c_str());
+      ESP_LOGD("mideaXYE.opMode", "xyeVars.op is %s", xyeVars.op.c_str());
       return xyeVars.op;
     set_action:
       - lambda: |-
@@ -349,9 +350,9 @@ select:
               xyeVars.opBytes = 0x81;
             } else {
               xyeVars.opBytes = 0x00;
-              ESP_LOGE("mideaXYE","Defaulting to off, invalid mode input: %s",x.str().c_str());
+              ESP_LOGE("mideaXYE.opMode","Defaulting to off, invalid mode input: %s",x.str().c_str());
             }
-            ESP_LOGI("mideaXYE","selected %x for mode, setting send flag",xyeVars.opBytes);
+            ESP_LOGI("mideaXYE.opMode","selected %x for mode, setting send flag",xyeVars.opBytes);
             xyeVars.newInput = true;
             id(opMode).publish_state(x);
           }

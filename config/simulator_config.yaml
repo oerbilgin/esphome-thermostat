@@ -101,10 +101,10 @@ number:
           format: "Simulated t1 temp set to %f, updating xyeVars.recData"
           args: x
           level: DEBUG
-          tag: simulator_config
+          tag: simulator_config.t1_sim
       - lambda: |-
           xyeVars.recData[T1_INDEX] = x;
-          ESP_LOGD("simulator_config", "xyeVars.recData[%i] is now %u", T1_INDEX, xyeVars.recData[T1_INDEX]);
+          ESP_LOGD("simulator_config.t1_sim", "xyeVars.recData[%i] is now %u", T1_INDEX, xyeVars.recData[T1_INDEX]);
   
   - platform: template
     name: "Simulated fanmode"
@@ -118,12 +118,12 @@ number:
           format: "Simulated fanmode set to %f, updating xyeVars.recData"
           args: x
           level: DEBUG
-          tag: simulator_config
+          tag: simulator_config.fan_sim
       - lambda: |-
           xyeVars.recData[REC_FAN] = x;
-          ESP_LOGD("simulator_config", "xyeVars.recData[%i] is now 0x%02x", REC_FAN, xyeVars.recData[REC_FAN]);
+          ESP_LOGD("simulator_config.fan_sim", "xyeVars.recData[%i] is now 0x%02x", REC_FAN, xyeVars.recData[REC_FAN]);
           xyeVars.fanBytes = x;
-          ESP_LOGD("simulator_config", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_FAN]);
+          ESP_LOGD("simulator_config.fan_sim", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_FAN]);
   - platform: template
     name: "Simulated opmode"
     id: opmode_sim
@@ -136,9 +136,9 @@ number:
           format: "Simulated opmode set to %f, updating xyeVars.recData"
           args: x
           level: DEBUG
-          tag: simulator_config
+          tag: simulator_config.opmode_sim
       - lambda: |-
           xyeVars.recData[REC_MODE] = x;
-          ESP_LOGD("simulator_config", "xyeVars.recData[%i] is now 0x%02x", REC_MODE, xyeVars.recData[REC_MODE]);
+          ESP_LOGD("simulator_config.opmode_sim", "xyeVars.recData[%i] is now 0x%02x", REC_MODE, xyeVars.recData[REC_MODE]);
           xyeVars.opBytes = x;
-          ESP_LOGD("simulator_config", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_MODE]);
+          ESP_LOGD("simulator_config.opmode_sim", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_MODE]);

@@ -107,4 +107,4 @@ touchscreen:
       number: 1
     on_touch:
       - lambda: |-
-          ESP_LOGD("Touch", "Touch detected at x=%d, y=%d", touch.x, touch.y);
+          ESP_LOGD("hardware_config.my_touchscreen", "Touch detected at x=%d, y=%d", touch.x, touch.y);
