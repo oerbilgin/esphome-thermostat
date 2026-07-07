@@ -268,8 +268,8 @@ script:
               - fan_mode_thermostat
               - auto_mode_thermostat
               - fan_selector
-              - hvac_status_label
               - next_hvac_mode
+              - hvac_mode_label
     - if:
         condition:
           lambda: 'return mode == "cool";'
@@ -299,6 +299,7 @@ script:
               - cool_mode_thermostat
               - setpoint
               - fan_selector
+              - hvac_mode_label
     - if:
         condition:
           lambda: 'return mode == "heat";'
@@ -328,6 +329,7 @@ script:
               - heat_mode_thermostat
               - setpoint
               - fan_selector
+              - hvac_mode_label
     - if:
         condition:
           lambda: 'return mode == "fan_only";'
@@ -423,6 +425,35 @@ script:
               - lvgl.dropdown.update:
                   id: fan_options
                   selected_index: 4
+- id: update_hvac_status_ui
+  then:
+    lambda: |-
+      std::string hvac_status_str = id(hvac_status).state;
+
+      ESP_LOGD("thermostat_ui", "Executing update_hvac_status_ui script, hvac_status_str is '%s'", hvac_status_str.c_str());
+
+      lv_label_set_text(id(hvac_status_label), hvac_status_str.c_str());
+      
+      lv_color_t status_color;
+
+      if (hvac_status_str == "Diffusing") {
+        status_color = my_colors::arc_fan_knob;
+      } else if (hvac_status_str == "Cooling") {
+        status_color = my_colors::arc_cool_knob;
+      } else if (hvac_status_str == "Heating") {
+        status_color = my_colors::arc_heat_knob;
+      } else if (hvac_status_str == "") {
+        status_color = my_colors::main_background_color;
+      } else {
+        status_color = my_colors::main_background_color;
+        ESP_LOGE("thermostat_ui", "unexpected hvac_status_str: '%s'!", hvac_status_str.c_str());
+      }
+
+      lv_obj_set_style_text_color(id(hvac_status_label), status_color, LV_PART_MAIN);
+      lv_obj_set_style_bg_color(id(hvac_status_background), status_color, LV_PART_MAIN);
+
+      // force redraw
+      lv_obj_invalidate(id(hvac_status_container));
 
 number:
   - platform: template
@@ -849,6 +880,45 @@ lvgl:
       scrollbar_mode: "OFF"
       widgets:
         - obj:
+            id: hvac_status_container
+            x: 391 # $thermostat_box_x_pos + 9
+            y: 21 # $thermostat_box_y_pos + 11
+            width: $thermostat_arc_width
+            height: $thermostat_arc_height
+            bg_opa: 0%
+            border_width: 0
+            border_opa: 0%
+            radius: 8
+            outline_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - obj:
+                  id: hvac_status_background
+                  x: 0
+                  y: 0
+                  width: $thermostat_arc_width
+                  height: $thermostat_arc_height
+                  align: CENTER
+                  bg_color: !lambda 'return my_colors::main_background_color;'
+                  bg_grad_color: !lambda 'return my_colors::main_background_color;'
+                  bg_grad_dir: VER
+                  border_width: 0
+                  border_opa: 0%
+                  radius: 9999
+                  pad_all: 0
+              - label:
+                  id: hvac_status_label
+                  x: 110
+                  y: 245
+                  width: 180
+                  height: 40
+                  text: "---"
+                  hidden: false
+                  text_color: !lambda 'return my_colors::text_dark_gray;'
+                  text_align: CENTER
+                  text_font: montserrat_30
+        - obj:
             id: mode_buttons_group
             x: 390
             y: 380
@@ -1024,6 +1094,7 @@ lvgl:
             text_color: !lambda 'return my_colors::main_text_color;'
             text_align: LEFT
             text_font: montserrat_24
+
         - obj:
             id: heat_mode_thermostat
             x: $thermostat_box_x_pos
@@ -1345,7 +1416,7 @@ lvgl:
             widgets:
               - label:
                   id: setpoint_number
-                  x: 135
+                  x: 144
                   y: 80
                   width: 130
                   height: 45
@@ -1355,7 +1426,7 @@ lvgl:
                   text_font: montserrat_34
               - label:
                   id: hvac_mode_label
-                  x: 147
+                  x: 159
                   y: 125
                   width: 100
                   height: 20
@@ -1439,17 +1510,6 @@ lvgl:
                   text_align: CENTER
                   text_font: montserrat_16
 
-        - label:
-            id: hvac_status_label
-            x: 500
-            y: 120
-            width: 180
-            height: 40
-            text: "---"
-            hidden: true
-            text_color: !lambda 'return my_colors::main_text_color;'
-            text_align: CENTER
-            text_font: montserrat_30
 
         - obj:
             id: fan_selector

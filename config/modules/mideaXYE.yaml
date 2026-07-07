@@ -50,12 +50,13 @@ interval:
             id(opMode).update();
           }
 
+# FIXME: the 60s update interval slows down my computer; try to find why, if can fix, otherwise never update and rely on hooks
+sensor:
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
 # A response is always 32 bytes of data, but only the first 30 are useful.
 # If we happen to check the buffer midstream then this will skip that cycle and finish reading it on the next cycle.
 # if nothing more comes in then it dumps the data
 # Last, it checks if there was data waiting to be sent and sends that data after reading.
-sensor:
   - platform: template
     name: "Inlet Air Temperature"
     unit_of_measurement: "°F"
@@ -115,6 +116,7 @@ sensor:
 
 
 text_sensor:
+# logic to determine what the hvac status is: cooling/heating/diffusing
   - platform: template
     name: HVAC Status
     id: hvac_status
@@ -127,25 +129,46 @@ text_sensor:
       // get the variables
       uint8_t t1_temp = xyeVars.recData[T1_INDEX];
       uint8_t t2a_temp = xyeVars.recData[T2A_INDEX];
-      std::string fan_status = id(fanStatus).state.c_str();
+      std::string fan_status = id(fanStatus).state;
+      std::string hvac_mode = id(opMode).current_option();
+      bool fan_is_on = fan_status != "off";
+
+      std::vector<std::string> cooling_modes = {"cool", "dry", "auto"};
+      std::vector<std::string> heating_modes = {"heat", "auto"};
+
       int temp_threashold = 10;
       std::string result;
-      
+
       if ((t2a_temp - t1_temp) > temp_threashold) {
         result = "Heating";
       } else if ((t2a_temp - t1_temp) < -temp_threashold) {
         result = "Cooling";
-      } else if (fan_status != "off") {
+      } else if (fan_is_on) {
         result = "Diffusing";
       } else result = "";
 
-      ESP_LOGD("mideaXYE", "t1_temp is %u, t2_temp is %u, fan_status is %s, and so the hvac mode is %s", t1_temp, t2a_temp, fan_status.c_str(), result.c_str());
+      // check that the status and mode match up
+      if (result == "Heating" && (std::find(heating_modes.begin(), heating_modes.end(), hvac_mode) == heating_modes.end())) {
+        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
+        result = "Diffusing";
+      } else if (result == "Cooling" && (std::find(cooling_modes.begin(), cooling_modes.end(), hvac_mode) == cooling_modes.end())) {
+        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
+        result = "Diffusing";
+      } else if (result == "Diffusing" && hvac_mode == "off") {
+        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to err.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
+        result = "err";
+      }
+      
+      // final check if the fan is actually on
+      if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
+        ESP_LOGE("mideaXYE", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
+        result = "err";
+      }
+
+      ESP_LOGD("mideaXYE", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
       return result;
     on_value:
-      - lvgl.label.update:
-          id: hvac_status_label
-          text: x
-
+      - script.execute: update_hvac_status_ui
 # the 2 error code registers combined in one message. it's just the code number,
 # you will need the service manual to decode them probably. I haven't tested any error
 # codes yet. 
@@ -190,7 +213,7 @@ text_sensor:
             ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means HIGH", fanBytes);
             return "high";
         } else {
-          ESP_LOGE("mideaXYE", "fanBytes is 0x%02x, and could not determine what this means!");
+          ESP_LOGE("mideaXYE", "fanBytes is 0x%02x, and could not determine what this means!", fanBytes);
           return "err";
         }
       }
@@ -224,7 +247,7 @@ select:
         ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to auto",xyeVars.fanBytes);
         xyeVars.fanMode = "auto";
       } else if (xyeVars.fanBytes == 0x00) {
-        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",xyeVars.fanBytes, id(fanMode).state.c_str());
+        ESP_LOGD("mideaXYE","xyeVars.fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",xyeVars.fanBytes, id(fanMode).current_option().c_str());
       } else {
         ESP_LOGE("mideaXYE","xyeVars.fanMode defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
         xyeVars.fanMode = "auto";
