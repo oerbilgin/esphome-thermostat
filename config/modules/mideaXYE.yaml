@@ -37,7 +37,7 @@ interval:
             ESP_LOGI("mideaXYE", "fanBytes state has changed from %f to %u", id(fanBytes).state, xyeVars.recData[REC_FAN]);
             id(fanBytes).publish_state(xyeVars.recData[REC_FAN]);
 
-            // update the fanmode and fanstatus text sensors
+            // update the fanmode and fanstatus text sensors/selects
             id(fanStatus).update();
             id(fanMode).update();
           }
@@ -50,7 +50,6 @@ interval:
             id(opMode).update();
           }
 
-# FIXME: the 60s update interval slows down my computer; try to find why, if can fix, otherwise never update and rely on hooks
 sensor:
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
 # A response is always 32 bytes of data, but only the first 30 are useful.
@@ -60,6 +59,7 @@ sensor:
   - platform: template
     name: "Inlet Air Temperature"
     unit_of_measurement: "°F"
+    update_interval: never # state gets published via the interval above
     id: t1
     device_class: temperature
     on_value: 
@@ -80,6 +80,7 @@ sensor:
 # otherwise it should drift close to ambient or T1
   - platform: template
     name: "Coil A Temperature"
+    update_interval: never # state gets published via the interval above
     id: t2a
     unit_of_measurement: "°F"
     device_class: temperature
@@ -88,6 +89,7 @@ sensor:
 
   - platform: template
     name: "Coil B Temperature"
+    update_interval: never # state gets published via the interval above
     id: t2b
     unit_of_measurement: "°F"
     device_class: temperature
@@ -96,6 +98,7 @@ sensor:
 # from the compressor outside which is ambient when it's not running.
   - platform: template
     name: "Outside Air Temperature"
+    update_interval: never # state gets published via the interval above
     id: t3
     unit_of_measurement: "°F"
     device_class: temperature
@@ -105,12 +108,14 @@ sensor:
 # internal helper sensor to track the state of the fan bytes
   - platform: template
     name: Fan Bytes Sensor
+    update_interval: never # state gets published via the interval above
     id: fanBytes
     internal: True
 
 # internal helper sensor to track the state of the opmode bytes
   - platform: template
     name: OpMode Bytes Sensor
+    update_interval: never # state gets published via the interval above
     id: modeBytes
     internal: True
 
@@ -119,6 +124,7 @@ text_sensor:
 # logic to determine what the hvac status is: cooling/heating/diffusing
   - platform: template
     name: HVAC Status
+    update_interval: never # gets updated by any changes to t1, t2a, t3, fanStatus
     id: hvac_status
     lambda: |-
       // this script looks at the fan modes and coil temps to determine if the unit 
@@ -181,6 +187,7 @@ text_sensor:
 # this sensor tells us what the current fan speed is
   - platform: template
     name: Fan Status
+    update_interval: never # gets updated by changes to fanBytes in the interval above
     id: fanStatus
     lambda: |-
       // update the fan status
@@ -225,6 +232,7 @@ select:
   - platform: template
     name: "Fan Mode"
     id: fanMode
+    update_interval: never # interval above updates this if fanBytes ever changes
     options:
       - 'low'
       - 'medium'
@@ -285,6 +293,7 @@ select:
   - platform: template
     id: opMode
     name: "Operating Mode"
+    update_interval: never # interval above updates this if the opBytes ever change
     options:
       - 'off'
       - 'auto'
