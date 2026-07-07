@@ -46,7 +46,7 @@ interval:
             ESP_LOGI("mideaXYE", "modeBytes state has changed from %f to %u", id(modeBytes).state, xyeVars.recData[REC_MODE]);
             id(modeBytes).publish_state(xyeVars.recData[REC_MODE]);
 
-            // update the mode text sensor
+            // update the mode select
             id(opMode).update();
           }
 
@@ -229,6 +229,7 @@ select:
             }
             ESP_LOGI("mideaXYE","selected %x, pressing button to send",xyeVars.fanBytes);
             xyeVars.newInput = true;
+            id(fanMode).publish_state(x);
           }
     on_value:
       then:
@@ -299,6 +300,7 @@ select:
             }
             ESP_LOGI("mideaXYE","selected %x for mode, setting send flag",xyeVars.opBytes);
             xyeVars.newInput = true;
+            id(opMode).publish_state(x);
           }
     on_value:
       then:
