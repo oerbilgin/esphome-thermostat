@@ -809,9 +809,8 @@ text_sensor:
           else:
             lvgl.label.update:
               id: days_condition_icon
-              text: "err"
-              text_font: montserrat_48
-              text_color: !lambda 'return my_colors::text_dark_gray;'
+              text: "\U000F002A"
+              text_color: !lambda 'return my_colors::text_red;'
 
 
 # External icon fonts - auto-generated for icons used in this design
@@ -870,6 +869,7 @@ font:
       "\U000F0592",  # Weather Hail
       "\U000F0F31",  # Weather Night Part Cloud
       "\U000F1799",  # Weather Smoke
+      "\U000F002A",  # Triangle Alert
     ]
 
 lvgl:
