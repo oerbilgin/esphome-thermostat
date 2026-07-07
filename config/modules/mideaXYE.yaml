@@ -71,6 +71,7 @@ sensor:
         - script.execute:
             id: update_setpoints
             visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+        - component.update: hvac_status
 
 
 # this is the temperature of the refrigerant coming into the air handler from the compressor
@@ -81,6 +82,8 @@ sensor:
     id: t2a
     unit_of_measurement: "°F"
     device_class: temperature
+    on_value:
+      - component.update: hvac_status
 
   - platform: template
     name: "Coil B Temperature"
@@ -95,6 +98,8 @@ sensor:
     id: t3
     unit_of_measurement: "°F"
     device_class: temperature
+    on_value:
+      - component.update: hvac_status
 
 # internal helper sensor to track the state of the fan bytes
   - platform: template
@@ -108,17 +113,49 @@ sensor:
     id: modeBytes
     internal: True
 
+
+text_sensor:
+  - platform: template
+    name: HVAC Status
+    id: hvac_status
+    lambda: |-
+      // this script looks at the fan modes and coil temps to determine if the unit 
+      // is actively heating, cooling, or diffusing
+      // if the t2a temp is > t1 by at least 10 degrees, then we are heating
+      // if t2a temp is < t1 by at least 10 degrees, then we are cooling
+      // if t2a temp is close to t1 temp, and fan status is not zero then we are diffusing
+      // get the variables
+      uint8_t t1_temp = xyeVars.recData[T1_INDEX];
+      uint8_t t2a_temp = xyeVars.recData[T2A_INDEX];
+      std::string fan_status = id(fanStatus).state.c_str();
+      int temp_threashold = 10;
+      std::string result;
+      
+      if ((t2a_temp - t1_temp) > temp_threashold) {
+        result = "Heating";
+      } else if ((t2a_temp - t1_temp) < -temp_threashold) {
+        result = "Cooling";
+      } else if (fan_status != "off") {
+        result = "Diffusing";
+      } else result = "";
+
+      ESP_LOGD("mideaXYE", "t1_temp is %u, t2_temp is %u, fan_status is %s, and so the hvac mode is %s", t1_temp, t2a_temp, fan_status.c_str(), result.c_str());
+      return result;
+    on_value:
+      - lvgl.label.update:
+          id: hvac_status_label
+          text: x
+
 # the 2 error code registers combined in one message. it's just the code number,
 # you will need the service manual to decode them probably. I haven't tested any error
 # codes yet. 
-text_sensor:
   - platform: template
     name: "Error Codes"
     update_interval: $sensor_update_interval
     lambda: |-
-      
       return {"E1: " + std::to_string(xyeVars.recData[REC_E1]) + " E2: " + std::to_string(xyeVars.recData[REC_E2])};
 
+# this sensor tells us what the current fan speed is
   - platform: template
     name: Fan Status
     id: fanStatus
@@ -142,21 +179,23 @@ text_sensor:
         // std::find returns numbers.end() if the value isn't found
         if (std::find(off_status.begin(), off_status.end(), fanBytes) != off_status.end()) {
             ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means OFF", fanBytes);
-            return "Off";
+            return "off";
         } else if (std::find(low_status.begin(), low_status.end(), fanBytes) != low_status.end()) {
             ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means LOW", fanBytes);
-             return "Low";
+             return "low";
         } else if (std::find(med_status.begin(), med_status.end(), fanBytes) != med_status.end()) {
             ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means MED", fanBytes);
-            return "Med";
+            return "med";
         } else if (std::find(high_status.begin(), high_status.end(), fanBytes) != high_status.end()) {
             ESP_LOGD("mideaXYE", "fanBytes is 0x%02x and means HIGH", fanBytes);
-            return "High";
+            return "high";
         } else {
           ESP_LOGE("mideaXYE", "fanBytes is 0x%02x, and could not determine what this means!");
           return "err";
         }
       }
+    on_value:
+      - component.update: hvac_status
       
 
 select:

@@ -1445,7 +1445,7 @@ lvgl:
             y: 120
             width: 180
             height: 40
-            text: "Status"
+            text: "---"
             hidden: true
             text_color: !lambda 'return my_colors::main_text_color;'
             text_align: CENTER
