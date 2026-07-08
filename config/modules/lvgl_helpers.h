@@ -84,7 +84,7 @@ lv_color_t get_color_mix(float temp, size_t num_thresholds, const float threshol
     uint8_t ratio = (uint8_t)(((val - low_t) / (high_t - low_t)) * 255.0f);
     lv_color_t color = lv_color_mix(c_high, c_low, ratio);
 
-    ESP_LOGD("get_temp_color", "temp=%.2f low=%.2f high=%.2f ratio=%hhu", temp, low_t, high_t, ratio);
+    ESP_LOGV("get_temp_color", "temp=%.2f low=%.2f high=%.2f ratio=%hhu", temp, low_t, high_t, ratio);
     return color;
 }
 

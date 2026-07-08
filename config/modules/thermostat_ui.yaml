@@ -126,7 +126,7 @@ script:
           ESP_LOGD("thermostat_ui.update_setpoints", "caching cooling_setpoint_global as %f", visible_setpoint);
           id(cooling_setpoint_global) = visible_setpoint;
         } else {
-          ESP_LOGW("thermostat_ui.update_setpoints", "hvac_mode is %s, but expected heat or cool", hvac_mode.c_str());
+          ESP_LOGD("thermostat_ui.update_setpoints", "hvac_mode is %s, so no need to cache anything.", hvac_mode.c_str());
         }
 
 - id: update_temp_icon
@@ -588,7 +588,8 @@ sensor:
               int max_val = (int)id(thermostat_arc_max_value_global);
               int actual_temp = (int)x;
               int result = max_val - actual_temp + min_val;
-              ESP_LOGI("thermostat_ui.average_house_temperature", "House temp changed. Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", min_val, actual_temp, result);
+              // FIXME: why is this log message always triggering twice?
+              ESP_LOGI("thermostat_ui.average_house_temperature", "House temp changed to %f. Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", x, min_val, actual_temp, result);
               return result;
   
   # next rain probability
