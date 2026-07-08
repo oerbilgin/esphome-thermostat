@@ -6,7 +6,122 @@ substitutions:
   sensor_update_interval: 1s
   aux_update_interval: 15s
 
+script:
+# This script temporarily sets the internal setpoint value
+# need to do it in a separate script because the delay step is not blocking this way vs. in cpp
+# FIXME: if the visible setpoint gets changed while we are in the delay, it will set the internal one back to the old value, overriding user intention
+# can we just trigger the update setpoints script at the end of this one to reset it? would this be better than jiggering it back?
+  - id: jiggle_internal_setpoint
+    mode: single
+    parameters:
+      current_internal_setpoint: float
+      temporary_setpoint: float
+    then:
+      - number.set:
+          id: internal_set_point
+          value: !lambda 'return temporary_setpoint;'
+      - delay: 30s
+      - script.execute: 
+          id: update_setpoints
+          visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+      # - number.set:
+      #     id: internal_set_point
+      #     value: !lambda 'return current_internal_setpoint;'
+
 interval:
+# This interval checks the setpoints and current temps and hvac status
+# and jiggles the internal setpoint if needed to lower the midea's deadband
+  - id: setpoint_watcher
+    interval: 60s
+    then:
+      - lambda: |-
+          std::string hvac_mode = id(opMode).current_option();
+          std::string hvac_state = id(hvac_status).state;
+          
+          // exit fast if this check is unnecessary
+          if ((hvac_mode == "cool" || hvac_mode == "heat" || hvac_mode == "auto") && (hvac_state == "Idle")) {
+            ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "hvac_mode is %s and hvac_state is %s, checking the setpoint against the deadband...",
+              hvac_mode.c_str(), hvac_state.c_str()
+            );
+          } else {
+            ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "hvac_mode is %s and hvac_state is %s, no need to check the setpoint against the deadband, exiting.",
+              hvac_mode.c_str(), hvac_state.c_str()
+            );
+            return;
+          }
+
+          float visible_setpoint = id(visible_setpoint_value).state;
+          float current_temp = id(average_house_temperature).state;
+          float deadband_value = id(deadband).state;
+          uint8_t current_internal_setpoint = id(internal_set_point).state;
+          float temporary_setpoint = 0.0;
+
+          ESP_LOGD(
+            "mideaXYE.setpoint_watcher",
+            "current temp: %f, visible_setpoint: %f, deadband_value: %f",
+            current_temp, visible_setpoint, deadband_value
+            );
+
+          float temp_delta = current_temp - visible_setpoint;
+
+          if (temp_delta < -deadband_value && hvac_mode == "heat") {
+            // it is colder than we want yet the hvac isn't heating; increase internal setpoint to trigger heating
+            temporary_setpoint = current_internal_setpoint + deadband_value;
+            ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "hvac state of %s and temp_delta of %f, need to trigger heating, so temporarily set the internal setpoint to %f",
+              hvac_state.c_str(), temp_delta, temporary_setpoint
+            );
+          } else if (temp_delta > deadband_value && hvac_mode == "cool") {
+            // it is hotter than we want yet the hvac isn't cooling; decrease internal setpoint to trigger heating
+            temporary_setpoint = current_internal_setpoint - deadband_value;
+            ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "hvac state of %s and temp_delta of %f, need to trigger cooling, so temporarily set the internal setpoint to %f",
+              hvac_state.c_str(), temp_delta, temporary_setpoint
+            );
+          } else if (hvac_mode == "auto") {
+              // FIXME: implement this
+              ESP_LOGW(
+                "mideaXYE.setpoint_watcher",
+                "Auto mode jiggle not implemented!"
+                );
+          } else {
+            ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "hvac_mode '%s' and temp_delta '%f' are incompatible for a jiggle.",
+              hvac_mode.c_str(), temp_delta
+            );
+            return;
+          }
+
+          ESP_LOGD(
+            "mideaXYE.setpoint_watcher",
+            "temporary_setpoint is %f",
+            temporary_setpoint
+            );
+          if (temporary_setpoint != 0) {
+            // fire off the script to do the jiggle
+            ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "internal_setpoint is %u and t1 temp is %u",
+              current_internal_setpoint, id(t1).state
+            );
+            ESP_LOGI(
+              "mideaXYE.setpoint_watcher",
+              "Jiggling internal setpoint from %u to %f for 30 seconds.",
+              current_internal_setpoint, temporary_setpoint
+            );
+            id(jiggle_internal_setpoint).execute(current_internal_setpoint, temporary_setpoint);
+          } else ESP_LOGD(
+              "mideaXYE.setpoint_watcher",
+              "temporary_setpoint is zero, no need to jiggle.",
+              hvac_state.c_str(), temp_delta
+            );
   # update sensors
   - id: update_sensors
     interval: $sensor_update_interval
@@ -402,6 +517,22 @@ number:
             ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
             xyeVars.setTemp = x;
             xyeVars.newInput = true;
+            id(internal_set_point).publish_state(x);
+  
+  # this number defines a custom deadband we can use to override the midea unit's internal deadband
+  # by seeing if the temp delta between setpoint and actual is greater than the deadband, we can jiggle the setpoint to force the unit to kick on.
+  - platform: template
+    name: Deadband
+    id: deadband
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 5
+    unit_of_measurement: "°F"
+    device_class: temperature
+    initial_value: 5 # pretty much guaranteed not to fire; full midea control
+    restore_value: True
+    optimistic: True
 
 # FIXME: weird stuff happens when i activate this
 # climate:
