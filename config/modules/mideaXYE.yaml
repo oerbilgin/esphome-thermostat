@@ -51,6 +51,23 @@ interval:
             id(opMode).update();
           }
 
+          if (id(internal_set_point).state != xyeVars.recData[REC_TEMP]) {
+            ESP_LOGI("mideaXYE.update_sensors", "setTemp has changed from %f to %u", id(internal_set_point).state, xyeVars.recData[REC_TEMP]);
+            id(internal_set_point).publish_state(xyeVars.recData[REC_TEMP]);
+          }
+
+          if (id(e1).state != xyeVars.recData[REC_E1]) {
+            ESP_LOGI("mideaXYE.update_sensors", "e1 has changed from %f to %u", id(e1).state, xyeVars.recData[REC_E1]);
+            id(e1).publish_state(xyeVars.recData[REC_E1]);
+          }
+
+          if (id(e2).state != xyeVars.recData[REC_E2]) {
+            ESP_LOGI("mideaXYE.update_sensors", "e2 has changed from %f to %u", id(e2).state, xyeVars.recData[REC_E2]);
+            id(e2).publish_state(xyeVars.recData[REC_E2]);
+          }
+
+
+
 sensor:
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
 # A response is always 32 bytes of data, but only the first 30 are useful.
@@ -94,6 +111,16 @@ sensor:
     id: t2b
     unit_of_measurement: "°F"
     device_class: temperature
+  
+  - platform: template
+    name: "E1 Status Code"
+    update_interval: never # state gets published via the interval above
+    id: e1
+  
+  - platform: template
+    name: E2 Status Code"
+    update_interval: never # state gets published via the interval above
+    id: e2
 
 # I don't think this is truly outside temperature. I think it's exhaust air temperature
 # from the compressor outside which is ambient when it's not running.
@@ -176,14 +203,6 @@ text_sensor:
       return result;
     on_value:
       - script.execute: update_hvac_status_ui
-# the 2 error code registers combined in one message. it's just the code number,
-# you will need the service manual to decode them probably. I haven't tested any error
-# codes yet. 
-  - platform: template
-    name: "Error Codes"
-    update_interval: $sensor_update_interval
-    lambda: |-
-      return {"E1: " + std::to_string(xyeVars.recData[REC_E1]) + " E2: " + std::to_string(xyeVars.recData[REC_E2])};
 
 # this sensor tells us what the current fan speed is
   - platform: template
@@ -369,20 +388,18 @@ number:
   - platform: template
     name: "Internal Set Point"
     id: internal_set_point
+    update_interval: never # is updated on change by the update_sensors interval
     internal: true # dont want anyone changing this directly, it's just for internal use
     step: 1
     mode: box
     min_value: 0
     max_value: 100
     unit_of_measurement: "°F"
-    #unit_of_measurement: "°C"
     device_class: temperature
-    update_interval: $sensor_update_interval
-    lambda: |-
-      return xyeVars.setTemp;
     set_action:
       - then:
         - lambda: |-
+            ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
             xyeVars.setTemp = x;
             xyeVars.newInput = true;
 
