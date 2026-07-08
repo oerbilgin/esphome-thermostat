@@ -38,7 +38,7 @@ substitutions:
   thermostat_actual_knob_size: -4
   thermostat_arc_min_value: 55
   thermostat_arc_max_value: 90
-  initial_setpoint_value: 72
+  initial_setpoint_value: "72"
 
 globals:
   - id: setpoint_updating
@@ -50,6 +50,15 @@ globals:
   - id: thermostat_arc_min_value_global
     type: int
     initial_value: '55' # cant substitute this for some reason, make sure it matches
+  - id: heating_setpoint_global
+    type: float
+    restore_value: yes
+    initial_value: $initial_setpoint_value
+  - id: cooling_setpoint_global
+    type: float
+    restore_value: yes
+    initial_value: $initial_setpoint_value
+
 
 select:
   # select to make comparing the fan mode options easier
@@ -107,6 +116,19 @@ script:
 
         // turn off the flag
         id(setpoint_updating) = false;
+
+        // cache the global based on the mode
+        std::string hvac_mode = id(opMode).current_option();
+        if (hvac_mode == "heat") {
+          ESP_LOGD("thermostat_ui.update_setpoints", "caching heating_setpoint_global as %f", visible_setpoint);
+          id(heating_setpoint_global) = visible_setpoint;
+        } else if (hvac_mode == "cool") {
+          ESP_LOGD("thermostat_ui.update_setpoints", "caching cooling_setpoint_global as %f", visible_setpoint);
+          id(cooling_setpoint_global) = visible_setpoint;
+        } else {
+          ESP_LOGW("thermostat_ui.update_setpoints", "hvac_mode is %s, but expected heat or cool", hvac_mode.c_str());
+        }
+
 - id: update_temp_icon
   mode: restart
   parameters:
@@ -277,6 +299,9 @@ script:
         condition:
           lambda: 'return mode == "cool";'
         then:
+          - number.set:
+              id: visible_setpoint_value
+              value: !lambda "return id(cooling_setpoint_global);"
           - lvgl.widget.update:
               id: cool_mode_button
               state:
@@ -307,6 +332,9 @@ script:
         condition:
           lambda: 'return mode == "heat";'
         then:
+          - number.set:
+              id: visible_setpoint_value
+              value: !lambda "return id(heating_setpoint_global);"
           - lvgl.widget.update:
               id: heat_mode_button
               state:
