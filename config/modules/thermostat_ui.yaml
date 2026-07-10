@@ -514,6 +514,7 @@ number:
   - platform: template
     id: visible_setpoint_value
     name: "Setpoint"
+    mode: box
     unit_of_measurement: "°F"
     device_class: temperature
     min_value: $thermostat_arc_min_value
@@ -536,7 +537,7 @@ sensor:
   # AQI
   - platform: homeassistant
     id: aqi_sensor
-    entity_id: sensor.airnow_air_quality_index
+    entity_id: sensor.airnow_aqi_persistent
     internal: true
     on_raw_value:
       then:

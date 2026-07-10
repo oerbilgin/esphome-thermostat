@@ -108,7 +108,7 @@ interval:
             // fire off the script to do the jiggle
             ESP_LOGD(
               "mideaXYE.setpoint_watcher",
-              "internal_setpoint is %u and t1 temp is %u",
+              "internal_setpoint is %u and t1 temp is %f",
               current_internal_setpoint, id(t1).state
             );
             ESP_LOGI(
@@ -523,6 +523,7 @@ number:
   - platform: template
     name: Deadband
     id: deadband
+    entity_category: "config"
     step: 1
     mode: box
     min_value: 0

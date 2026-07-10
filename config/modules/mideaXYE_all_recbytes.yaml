@@ -3,10 +3,12 @@
 # This allows us to see what is being received from the air handler
 # and to debug the communication.
 
+
 text_sensor:
   - platform: template
     name: "Byte 0 - preamble"
     id: recdata_byte_0
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[0];
@@ -15,6 +17,7 @@ text_sensor:
   - platform: template
     name: "Byte 1 - response code"
     id: recdata_byte_1
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[1];
@@ -23,6 +26,7 @@ text_sensor:
   - platform: template
     name: "Byte 2 - to master"
     id: recdata_byte_2
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[2];
@@ -31,6 +35,7 @@ text_sensor:
   - platform: template
     name: "Byte 3 - destination master device id"
     id: recdata_byte_3
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[3];
@@ -39,6 +44,7 @@ text_sensor:
   - platform: template
     name: "Byte 4 - device id"
     id: recdata_byte_4
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[4];
@@ -47,6 +53,7 @@ text_sensor:
   - platform: template
     name: "Byte 5 - destination master device id"
     id: recdata_byte_5
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[5];
@@ -55,6 +62,7 @@ text_sensor:
   - platform: template
     name: "Byte 6 - capabilities ?"
     id: recdata_byte_6
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[6];
@@ -63,6 +71,7 @@ text_sensor:
   - platform: template
     name: "Byte 7 - capabilities"
     id: recdata_byte_7
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[7];
@@ -71,6 +80,7 @@ text_sensor:
   - platform: template
     name: "Byte 8 - operating mode"
     id: recdata_byte_8
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[8];
@@ -79,6 +89,7 @@ text_sensor:
   - platform: template
     name: "Byte 9 - fan mode"
     id: recdata_byte_9
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[9];
@@ -87,6 +98,7 @@ text_sensor:
   - platform: template
     name: "Byte 10 - set temp"
     id: recdata_byte_10
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[10];
@@ -95,6 +107,7 @@ text_sensor:
   - platform: template
     name: "Byte 11 - t1 temp"
     id: recdata_byte_11
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[11];
@@ -103,6 +116,7 @@ text_sensor:
   - platform: template
     name: "Byte 12 - t2a temp"
     id: recdata_byte_12
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[12];
@@ -111,6 +125,7 @@ text_sensor:
   - platform: template
     name: "Byte 13 - t2b temp"
     id: recdata_byte_13
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[13];
@@ -119,6 +134,7 @@ text_sensor:
   - platform: template
     name: "Byte 14 - t3 temp"
     id: recdata_byte_14
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[14];
@@ -127,6 +143,7 @@ text_sensor:
   - platform: template
     name: "Byte 15 - current?"
     id: recdata_byte_15
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[15];
@@ -135,6 +152,7 @@ text_sensor:
   - platform: template
     name: "Byte 16 - ?"
     id: recdata_byte_16
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[16];
@@ -143,6 +161,7 @@ text_sensor:
   - platform: template
     name: "Byte 17 - timer start"
     id: recdata_byte_17
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[17];
@@ -151,6 +170,7 @@ text_sensor:
   - platform: template
     name: "Byte 18 - timer stop"
     id: recdata_byte_18
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[18];
@@ -159,6 +179,7 @@ text_sensor:
   - platform: template
     name: "Byte 19 - run status"
     id: recdata_byte_19
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[19];
@@ -167,6 +188,7 @@ text_sensor:
   - platform: template
     name: "Byte 20 - mode flags"
     id: recdata_byte_20
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[20];
@@ -175,6 +197,7 @@ text_sensor:
   - platform: template
     name: "Byte 21 - operating flags"
     id: recdata_byte_21
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[21];
@@ -183,6 +206,7 @@ text_sensor:
   - platform: template
     name: "Byte 22 - error 1"
     id: recdata_byte_22
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[22];
@@ -191,6 +215,7 @@ text_sensor:
   - platform: template
     name: "Byte 23 - error 2"
     id: recdata_byte_23
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[23];
@@ -199,6 +224,7 @@ text_sensor:
   - platform: template
     name: "Byte 24 - protect 1"
     id: recdata_byte_24
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[24];
@@ -207,6 +233,7 @@ text_sensor:
   - platform: template
     name: "Byte 25 - protect 2"
     id: recdata_byte_25
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[25];
@@ -215,6 +242,7 @@ text_sensor:
   - platform: template
     name: "Byte 26 - ccm comm err"
     id: recdata_byte_26
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[26];
@@ -223,6 +251,7 @@ text_sensor:
   - platform: template
     name: "Byte 27 - ?"
     id: recdata_byte_27
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[27];
@@ -231,6 +260,7 @@ text_sensor:
   - platform: template
     name: "Byte 28 - startup status flag 1"
     id: recdata_byte_28
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[28];
@@ -239,6 +269,7 @@ text_sensor:
   - platform: template
     name: "Byte 29 - startup status flag 2"
     id: recdata_byte_29
+    entity_category: "diagnostic"
     update_interval: $sensor_update_interval
     lambda: |-
       uint8_t value =  xyeVars.recData[29];
