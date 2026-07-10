@@ -26,6 +26,7 @@ script:
         xyeVars.waitingToSend = false;
         xyeVars.commandSent = true;
 
+# FIXME: some data are being sent immediately but we need to wait until everything's initialized before allowing to send any data!
 # this will construct the command to send to the air handler, called by the input sensors
 # when required.  It tries to not send if we're in the middle of receiving.
   - id: send_command
@@ -36,19 +37,27 @@ script:
           uint8_t resp;
           // check to see if the op, fan, or settemp send vars are not empty; if yes then send it, if no then just send the current val
           if (xyeVars.opBytesSend) { 
-            ESP_LOGI("mideaXYE_UART.send_command", "New op value to send: 0x%02X", xyeVars.opBytesSend);
+            ESP_LOGI("mideaXYE_UART.send_command", "New op value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.opBytesSend));
             xyeVars.sendData[SEND_MODE] = *xyeVars.opBytesSend; xyeVars.opBytesSend.reset(); 
             } else { xyeVars.sendData[SEND_MODE] = xyeVars.opBytes; }
           
           if (xyeVars.fanBytesSend) { 
-            ESP_LOGI("mideaXYE_UART.send_command", "New fan value to send: 0x%02X", xyeVars.fanBytesSend);
+            ESP_LOGI("mideaXYE_UART.send_command", "New fan value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.fanBytesSend));
             xyeVars.sendData[SEND_FAN] = *xyeVars.fanBytesSend; xyeVars.fanBytesSend.reset(); 
             } else { xyeVars.sendData[SEND_MODE] = xyeVars.fanBytes; }
           
           if (xyeVars.setTempSend) { 
-            ESP_LOGI("mideaXYE_UART.send_command", "New setTemp value to send: 0x%02X", xyeVars.setTempSend);
+            ESP_LOGI("mideaXYE_UART.send_command", "New setTemp value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.setTempSend));
             xyeVars.sendData[SEND_TEMP] = *xyeVars.setTempSend; xyeVars.setTempSend.reset(); 
           } else { xyeVars.sendData[SEND_TEMP] = xyeVars.setTemp; }
+
+          ESP_LOGD(
+            "mideaXYE_UART.send_command",
+            "Sending op: 0x%02X, fan: 0x%02X, setTemp: 0x%02X",
+            static_cast<unsigned int>(*xyeVars.opBytesSend),
+            static_cast<unsigned int>(*xyeVars.fanBytesSend),
+            static_cast<unsigned int>(*xyeVars.setTempSend)
+            )
 
           uint8_t i=0;
           uint32_t crc=0;
