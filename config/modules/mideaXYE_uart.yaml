@@ -35,6 +35,16 @@ script:
         if (!xyeVars.waitingForResponse)
         {
           uint8_t resp;
+          ESP_LOGD(
+            "mideaXYE_UART.send_command",
+            "send_command starting: opBytes=0x%02X fanBytes=0x%02X setTemp=0x%02X newInput=%s commandSent=%s waitingForResponse=%s",
+            xyeVars.opBytes,
+            xyeVars.fanBytes,
+            xyeVars.setTemp,
+            xyeVars.newInput ? "true" : "false",
+            xyeVars.commandSent ? "true" : "false",
+            xyeVars.waitingForResponse ? "true" : "false"
+          );
           // check to see if the op, fan, or settemp send vars are not empty; if yes then send it, if no then just send the current val
           if (xyeVars.opBytesSend) { 
             ESP_LOGI("mideaXYE_UART.send_command", "New op value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.opBytesSend));
@@ -44,7 +54,7 @@ script:
           if (xyeVars.fanBytesSend) { 
             ESP_LOGI("mideaXYE_UART.send_command", "New fan value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.fanBytesSend));
             xyeVars.sendData[SEND_FAN] = *xyeVars.fanBytesSend; xyeVars.fanBytesSend.reset(); 
-            } else { xyeVars.sendData[SEND_MODE] = xyeVars.fanBytes; }
+            } else { xyeVars.sendData[SEND_FAN] = xyeVars.fanBytes; }
           
           if (xyeVars.setTempSend) { 
             ESP_LOGI("mideaXYE_UART.send_command", "New setTemp value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.setTempSend));
@@ -57,7 +67,7 @@ script:
             static_cast<unsigned int>(*xyeVars.opBytesSend),
             static_cast<unsigned int>(*xyeVars.fanBytesSend),
             static_cast<unsigned int>(*xyeVars.setTempSend)
-            )
+            );
 
           uint8_t i=0;
           uint32_t crc=0;
@@ -72,6 +82,13 @@ script:
           ESP_LOGD("mideaXYE_UART.send_command","sum of values for CRC calc is %i",crc);
           xyeVars.sendData[SEND_CRC] = 0xFF - (crc&0xFF);
           ESP_LOGD("mideaXYE_UART.send_command","calculated CRC is %x",crc);
+          std::ostringstream send_oss;
+          send_oss << std::uppercase << std::hex << std::setfill('0');
+          for (uint8_t j = 0; j < SEND_LEN; ++j) {
+            if (j) send_oss << ' ';
+            send_oss << "0x" << std::setw(2) << static_cast<int>(xyeVars.sendData[j]);
+          }
+          ESP_LOGD("mideaXYE_UART.send_command","final sendData: %s", send_oss.str().c_str());
           resp = id(midea_uart).available();
           if (resp==0) 
           {
@@ -80,7 +97,7 @@ script:
             xyeVars.waitingForResponse = true;
             xyeVars.commandSent = true;
           } else {
-            ESP_LOGD("mideaXYE_UART.send_command","had to wait to send, response was available");
+            ESP_LOGD("mideaXYE_UART.send_command","had to wait to send, response available=%u", resp);
             std::memcpy(xyeVars.waitSendData, xyeVars.sendData, 16);
             xyeVars.waitingToSend = true;
           }
@@ -95,12 +112,23 @@ sensor:
     internal: true
     update_interval: $sensor_update_interval
     lambda: |-
-      if (!id(device_initialized)) return;
+      if (!id(device_initialized)) return 0;
 
       uint8_t i,resp;
       xyeVars.doneReading = false;
       ESP_LOGV("mideaXYE_UART.updater","checking for incoming serial data");
       resp = id(midea_uart).available();
+      ESP_LOGV(
+        "mideaXYE_UART.updater",
+        "updater state: resp=%u newInput=%s commandSent=%s waitingForResponse=%s waitingToSend=%s prevResp=%u waitCount=%u",
+        resp,
+        xyeVars.newInput ? "true" : "false",
+        xyeVars.commandSent ? "true" : "false",
+        xyeVars.waitingForResponse ? "true" : "false",
+        xyeVars.waitingToSend ? "true" : "false",
+        xyeVars.prevResp,
+        xyeVars.waitCount
+      );
       if (resp>0)
       {
         ESP_LOGD("mideaXYE_UART.updater","there are %i bytes of data waiting",resp);
@@ -118,6 +146,13 @@ sensor:
               id(midea_uart).read_byte(&dummy);
             }
           }
+          std::ostringstream packet_oss;
+          packet_oss << std::uppercase << std::hex << std::setfill('0');
+          for (uint8_t j = 0; j < 30; ++j) {
+            if (j) packet_oss << ' ';
+            packet_oss << "0x" << std::setw(2) << static_cast<int>(xyeVars.recData[j]);
+          }
+          ESP_LOGD("mideaXYE_UART.updater","raw packet bytes: %s", packet_oss.str().c_str());
           ESP_LOGD("mideaXYE_UART.updater","done reading, examining data");
           xyeVars.doneReading = true;
           xyeVars.waitingForResponse = false;
@@ -166,6 +201,13 @@ sensor:
 
       if (xyeVars.doneReading) 
       {
+        ESP_LOGD(
+          "mideaXYE_UART.updater",
+          "doneReading branch: commandSent=%s newInput=%s waitingToSend=%s",
+          xyeVars.commandSent ? "true" : "false",
+          xyeVars.newInput ? "true" : "false",
+          xyeVars.waitingToSend ? "true" : "false"
+        );
         if (!xyeVars.commandSent && !xyeVars.newInput)
         {
           bool theyMatch = true;
@@ -183,7 +225,7 @@ sensor:
             xyeVars.fanBytes = xyeVars.recData[REC_FAN];
             xyeVars.opBytes = xyeVars.recData[REC_MODE];
             xyeVars.setTemp = xyeVars.recData[REC_TEMP];
-            ESP_LOGD("mideaXYE_UART.updater","Got these updated values: op %02X fan %02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
+            ESP_LOGD("mideaXYE_UART.updater","Got these updated values: op 0x%02X fan 0x%02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
             
             std::ostringstream oss;
             oss << std::uppercase << std::hex << std::setfill('0');
@@ -238,7 +280,7 @@ sensor:
     internal: true
     update_interval: $aux_update_interval
     lambda: |-
-      if (!id(device_initialized)) return;
+      if (!id(device_initialized)) return 0;
 
       ESP_LOGD("mideaXYE_UART.querier","query check. newInput: %s  waitingForResponse:  %s",xyeVars.newInput ? "true" : "false", xyeVars.waitingForResponse ? "true" : "false");
       if (!xyeVars.newInput && !xyeVars.waitingForResponse)
