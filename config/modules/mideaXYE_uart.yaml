@@ -26,7 +26,7 @@ script:
         xyeVars.waitingToSend = false;
         xyeVars.commandSent = true;
 
-# FIXME: some data are being sent immediately but we need to wait until everything's initialized before allowing to send any data!
+# FIXME: some data are being sent immediately and causing all sorts of weirdness but we need to wait until everything's initialized before allowing to send any data!
 # this will construct the command to send to the air handler, called by the input sensors
 # when required.  It tries to not send if we're in the middle of receiving.
   - id: send_command
@@ -95,6 +95,8 @@ sensor:
     internal: true
     update_interval: $sensor_update_interval
     lambda: |-
+      if (!id(device_initialized)) return;
+
       uint8_t i,resp;
       xyeVars.doneReading = false;
       ESP_LOGV("mideaXYE_UART.updater","checking for incoming serial data");
@@ -214,7 +216,6 @@ sensor:
       }
 
       // now check if we need to send new data
-      // FIXME: should this be earlier in the script to prevent overwriting send data like setTemp etc? Or perhaps use different vars to set?
       if (xyeVars.newInput)
       {
         // give at least 5 cycles to accumulate changes (multiple presses of the temperature button for example)
@@ -237,6 +238,8 @@ sensor:
     internal: true
     update_interval: $aux_update_interval
     lambda: |-
+      if (!id(device_initialized)) return;
+
       ESP_LOGD("mideaXYE_UART.querier","query check. newInput: %s  waitingForResponse:  %s",xyeVars.newInput ? "true" : "false", xyeVars.waitingForResponse ? "true" : "false");
       if (!xyeVars.newInput && !xyeVars.waitingForResponse)
       {

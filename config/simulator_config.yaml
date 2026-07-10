@@ -62,8 +62,8 @@ number:
           xyeVars.fanBytes = x;
 
   - platform: template
-    name: "Simulated xyeVars.fanBytes"
-    id: xyeVars_fanBytes
+    name: "Simulated xyeVars.fanBytesSend"
+    id: xyeVars_fanBytesSend
     step: 1
     mode: box
     min_value: 0

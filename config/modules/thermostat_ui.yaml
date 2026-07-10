@@ -10,6 +10,9 @@ esphome:
           format: "Thermostat UI booted, waiting for valid temperature readings before updating setpoints"
           level: INFO
           tag: "thermostat_ui.on_boot"
+      - globals.set:
+          id: device_initialized
+          value: 'true'
       # Wait until the temperature sensors have actual valid readings
       - wait_until:
           lambda: |-
@@ -41,6 +44,9 @@ substitutions:
   initial_setpoint_value: "72"
 
 globals:
+  - id: device_initialized
+    type: bool
+    initial_value: 'false'
   - id: setpoint_updating
     type: bool
     initial_value: 'false'

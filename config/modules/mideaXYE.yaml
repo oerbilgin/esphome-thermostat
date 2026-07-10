@@ -30,6 +30,9 @@ interval:
     interval: 60s
     then:
       - lambda: |-
+          // immediately stop if the device isn't initialized yet
+          if (!id(device_initialized)) return;
+
           std::string hvac_mode = id(opMode).current_option();
           std::string hvac_state = id(hvac_status).state;
           
@@ -121,6 +124,8 @@ interval:
     interval: $sensor_update_interval
     then:
       - lambda: |-
+          if (!id(device_initialized)) return;
+
           // publish sensor states only if recdata is different (i.e. only on new values)
           // publishing state skips the set_action, but not on_value
           if (id(t1).state != xyeVars.recData[T1_INDEX]) {
