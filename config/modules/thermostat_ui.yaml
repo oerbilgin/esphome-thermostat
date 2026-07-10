@@ -74,6 +74,36 @@ select:
     internal: true
 
 script:
+- id: update_current_temp_arcs
+  mode: restart
+  parameters:
+    temperature_to_show: float
+    temperature_label: string
+  then:
+    - lvgl.label.update:
+        id: current_temp_number
+        text: !lambda 'return to_string((int)temperature_to_show) + "°F";'
+    - lvgl.label.update:
+        id: current_temp_label
+        text: !lambda 'return temperature_label;'
+    - lvgl.arc.update:
+        id: 
+          - heat_arc_actual_temp
+          - auto_heat_arc_actual_temp
+          - auto_cool_arc_actual_temp
+        value: !lambda 'return (int)temperature_to_show;'
+    - lvgl.arc.update:
+        id: 
+          - cool_arc_actual_temp
+          - auto_cool_arc_actual_temp
+        value: !lambda |-
+          int min_val = (int)id(thermostat_arc_min_value_global);
+          int max_val = (int)id(thermostat_arc_max_value_global);
+          int actual_temp = (int)temperature_to_show;
+          int result = max_val - actual_temp + min_val;
+          // FIXME: why is this log message always triggering twice?
+          ESP_LOGI("thermostat_ui.average_house_temperature", "%s temp changed to %f. Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", temperature_label.c_str(), temperature_to_show, min_val, actual_temp, result);
+          return result;
 - id: update_setpoints
   mode: restart
   # make this the parameter so it can be used by set_action of the visible_setpoint_value number,
@@ -354,7 +384,7 @@ script:
               - hvac_mode_label
           - lvgl.widget.update:
               id: turbo_mode_switch
-              opa: 100% # TODO: figure out how to do turbo mode
+              opa: 100%
               checkable: true
               state:
                 checked: false
@@ -610,7 +640,6 @@ sensor:
                   bg_color: !lambda 'return my_colors::text_light_gray;'
                   shadow_color: !lambda 'return my_colors::text_light_gray;'
 
-  
   # Inside house temp
   - platform: homeassistant
     id: average_house_temperature
@@ -619,27 +648,10 @@ sensor:
     unit_of_measurement: "°F"
     on_value:
       then:
-        - lvgl.label.update:
-            id: current_temp_number
-            text: !lambda 'return to_string((int)x) + "°F";'
-        - lvgl.arc.update:
-            id: 
-              - heat_arc_actual_temp
-              - auto_heat_arc_actual_temp
-              - auto_cool_arc_actual_temp
-            value: !lambda 'return (int)x;'
-        - lvgl.arc.update:
-            id: 
-              - cool_arc_actual_temp
-              - auto_cool_arc_actual_temp
-            value: !lambda |-
-              int min_val = (int)id(thermostat_arc_min_value_global);
-              int max_val = (int)id(thermostat_arc_max_value_global);
-              int actual_temp = (int)x;
-              int result = max_val - actual_temp + min_val;
-              // FIXME: why is this log message always triggering twice?
-              ESP_LOGI("thermostat_ui.average_house_temperature", "House temp changed to %f. Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", x, min_val, actual_temp, result);
-              return result;
+        - script.execute: 
+            id: update_current_temp_arcs
+            temperature_to_show: !lambda 'return x;'
+            temperature_label: "Inside"
   
   # next rain probability
   - platform: homeassistant
@@ -1173,6 +1185,9 @@ lvgl:
                         text_align: CENTER
                         text_color: !lambda 'return my_colors::main_text_color;'
         - switch:
+            # TODO: figure out how to send turbo mode
+            # TODO: make a frontend control switch for HASS
+            hidden: true
             id: turbo_mode_switch
             x: 295
             y: 430

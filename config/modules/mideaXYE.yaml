@@ -197,6 +197,18 @@ sensor:
     device_class: temperature
     on_value: 
       then:
+        - if:
+            condition: 
+              lambda: 'return std::isnan(id(average_house_temperature).state);'
+            then:
+              - logger.log:
+                  format: "average_house_temperature is unavailable, so using t1 temp in the UI"
+                  level: WARN
+                  tag: "mideaXYE.t1"
+              - script.execute: 
+                  id: update_current_temp_arcs
+                  temperature_to_show: !lambda 'return x;'
+                  temperature_label: "**AHU**"
         - logger.log:
             format: "t1 emperature changed to %.1f, executing update_setpoints script"
             args: x
