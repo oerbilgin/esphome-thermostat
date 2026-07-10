@@ -168,6 +168,7 @@ interval:
           if (id(internal_set_point).state != xyeVars.recData[REC_TEMP]) {
             ESP_LOGI("mideaXYE.update_sensors", "setTemp has changed from %f to %u", id(internal_set_point).state, xyeVars.recData[REC_TEMP]);
             id(internal_set_point).publish_state(xyeVars.recData[REC_TEMP]);
+            id(internal_setpoint_sensor).publish_state(xyeVars.recData[REC_TEMP]);
           }
 
           if (id(e1).state != xyeVars.recData[REC_E1]) {
@@ -232,7 +233,7 @@ sensor:
     id: e1
   
   - platform: template
-    name: E2 Status Code"
+    name: "E2 Status Code"
     update_interval: never # state gets published via the interval above
     id: e2
 
@@ -260,6 +261,14 @@ sensor:
     update_interval: never # state gets published via the interval above
     id: modeBytes
     internal: True
+
+# sensor to see the internal set temp
+# mirrors internal_setpoint number without allowing users to change it directly
+  - platform: template
+    name: Internal Setpoint
+    update_interval: never # state gets published via the interval above
+    id: internal_setpoint_sensor
+    entity_category: "diagnostic"
 
 
 text_sensor:

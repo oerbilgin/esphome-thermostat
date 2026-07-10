@@ -76,7 +76,7 @@ sensor:
     lambda: |-
       uint8_t i,resp;
       xyeVars.doneReading = false;
-      ESP_LOGD("mideaXYE_UART.updater","checking for incoming serial data");
+      ESP_LOGV("mideaXYE_UART.updater","checking for incoming serial data");
       resp = id(midea_uart).available();
       if (resp>0)
       {
@@ -107,21 +107,31 @@ sensor:
             uint8_t dummy;
             id(midea_uart).read_byte(&dummy);
           }
-          ESP_LOGW("mideaXYE_UART.updater","dumped some data: %i",resp);
+          ESP_LOGD("mideaXYE_UART.updater","dumped some leftover data: %i",resp);
           xyeVars.waitingForResponse = false;
           xyeVars.prevResp = 0;
           xyeVars.doneReading = true;
         } else 
         {
               // might have caught in middle of stream
-              ESP_LOGW("mideaXYE_UART.updater","got small response, wait for more. size was %i", resp);
+              ESP_LOGD("mideaXYE_UART.updater","got small response, wait for more. size was %i", resp);
               xyeVars.prevResp = resp;
         }
       }
       if (xyeVars.waitingForResponse)
       {
         if (xyeVars.waitCount > 2){
-          ESP_LOGW("mideaXYE_UART.updater","waited 3 cycles for a response, giving up");
+          uint8_t debug_bytes[32] = {0};
+          for (uint8_t j = 0; j < resp; ++j) {
+            id(midea_uart).read_byte(&debug_bytes[j]);
+          }
+          std::ostringstream oss;
+          oss << std::uppercase << std::hex << std::setfill('0');
+          for (uint8_t j = 0; j < resp; ++j) {
+            if (j) oss << ' ';
+            oss << "0x" << std::setw(2) << static_cast<int>(debug_bytes[j]);
+          }
+          ESP_LOGW("mideaXYE_UART.updater", "waited 3 cycles for a response, giving up. bytes: %s", oss.str().c_str());
           xyeVars.waitingForResponse = false;
           xyeVars.waitCount = 0;
           xyeVars.doneReading = true;
@@ -164,7 +174,7 @@ sensor:
               oss << "0x";
               oss << std::setw(2) << static_cast<int>(xyeVars.recData[i]);
             }
-            ESP_LOGD("mideaXYE_UART.updater", "full recdata: %s", oss.str());
+            ESP_LOGD("mideaXYE_UART.updater", "full recdata: %s", oss.str().c_str());
           } else 
           {
             ESP_LOGW("mideaXYE_UART.updater","First 6 bytes of incoming data were bad, not using values");
@@ -183,6 +193,7 @@ sensor:
       }
 
       // now check if we need to send new data
+      // TODO: should this be earlier in the script to prevent overwriting send data like setTemp etc? Or perhaps use different vars to set?
       if (xyeVars.newInput)
       {
         // give at least 5 cycles to accumulate changes (multiple presses of the temperature button for example)
