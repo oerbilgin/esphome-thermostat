@@ -62,6 +62,21 @@ number:
           xyeVars.fanBytes = x;
 
   - platform: template
+    name: "Simulated xyeVars.fanBytes"
+    id: xyeVars_fanBytes
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 255
+    update_interval: $sensor_update_interval
+    lambda: |-
+      return xyeVars.fanBytesSend;
+    set_action:
+      - lambda: |-
+          xyeVars.fanBytesSend = x;
+          xyeVars.fanBytes = x;
+
+  - platform: template
     name: "Simulated xyeVars.opBytes"
     id: xyeVars_opBytes
     step: 1

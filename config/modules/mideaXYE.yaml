@@ -406,20 +406,21 @@ select:
             xyeVars.fanMode = x;
             ESP_LOGI("mideaXYE.fanMode","change fan to: %s",x.str().c_str());
             if (xyeVars.fanMode == "high"){
-              xyeVars.fanBytes = 0x01;
+              xyeVars.fanBytesSend = 0x01;
             } else if (xyeVars.fanMode == "auto"){
-              xyeVars.fanBytes = 0x80;
+              xyeVars.fanBytesSend = 0x80;
             } else if (xyeVars.fanMode == "medium"){
-              xyeVars.fanBytes = 0x02;
+              xyeVars.fanBytesSend = 0x02;
             } else if (xyeVars.fanMode == "low"){
-              xyeVars.fanBytes = 0x04;
+              xyeVars.fanBytesSend = 0x04;
             } else {
-              xyeVars.fanBytes = 0x80;
+              xyeVars.fanBytesSend = 0x80;
               ESP_LOGE("mideaXYE.fanMode","Defaulting to auto, invalid fan input: %s",x.str().c_str());
             }
-            ESP_LOGI("mideaXYE.fanMode","selected %x, pressing button to send",xyeVars.fanBytes);
+            ESP_LOGI("mideaXYE.fanMode","selected 0x%x, pressing button to send",
+            xyeVars.fanBytesSend ? static_cast<unsigned int>(*xyeVars.fanBytesSend) : 0xDEADBEEF);
             xyeVars.newInput = true;
-            id(fanMode).publish_state(x);
+            // id(fanMode).publish_state(x); // Dont think we need to publish state since the true value will round trip in recdata?
           }
     on_value:
       then:
@@ -474,24 +475,25 @@ select:
           {
             xyeVars.op = x;
             if (xyeVars.op == "off"){
-              xyeVars.opBytes = 0x00;
+              xyeVars.opBytesSend = 0x00;
             } else if (xyeVars.op == "auto"){
-              xyeVars.opBytes = 0x91;
+              xyeVars.opBytesSend = 0x91;
             } else if (xyeVars.op == "cool"){
-              xyeVars.opBytes = 0x88;
+              xyeVars.opBytesSend = 0x88;
             } else if (xyeVars.op == "dry"){
-              xyeVars.opBytes = 0x82;
+              xyeVars.opBytesSend = 0x82;
             } else if (xyeVars.op == "heat"){
-              xyeVars.opBytes = 0x84;
+              xyeVars.opBytesSend = 0x84;
             } else if (xyeVars.op == "fan_only"){
-              xyeVars.opBytes = 0x81;
+              xyeVars.opBytesSend = 0x81;
             } else {
-              xyeVars.opBytes = 0x00;
+              xyeVars.opBytesSend = 0x00;
               ESP_LOGE("mideaXYE.opMode","Defaulting to off, invalid mode input: %s",x.str().c_str());
             }
-            ESP_LOGI("mideaXYE.opMode","selected %x for mode, setting send flag",xyeVars.opBytes);
+            ESP_LOGI("mideaXYE.opMode","selected %x for mode, setting send flag",
+            xyeVars.opBytesSend ? static_cast<unsigned int>(*xyeVars.opBytesSend) : 0xDEADBEEF);
             xyeVars.newInput = true;
-            id(opMode).publish_state(x);
+            // id(opMode).publish_state(x); // dont think we need to do this since it will eventually roundtrip with recdata?
           }
     on_value:
       then:
@@ -518,9 +520,9 @@ number:
       - then:
         - lambda: |-
             ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
-            xyeVars.setTemp = x;
+            xyeVars.setTempSend = x;
             xyeVars.newInput = true;
-            id(internal_set_point).publish_state(x);
+            // id(internal_set_point).publish_state(x); // dont think we need to do this since it will update on roundtrip?
   
   # this number defines a custom deadband we can use to override the midea unit's internal deadband
   # by seeing if the temp delta between setpoint and actual is greater than the deadband, we can jiggle the setpoint to force the unit to kick on.
