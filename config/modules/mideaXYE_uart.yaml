@@ -34,10 +34,22 @@ script:
         if (!xyeVars.waitingForResponse)
         {
           uint8_t resp;
-          xyeVars.sendData[SEND_MODE] = xyeVars.opBytes;
-          xyeVars.sendData[SEND_FAN] = xyeVars.fanBytes;
-          xyeVars.sendData[SEND_TEMP] = xyeVars.setTemp;
-          ESP_LOGD("mideaXYE_UART.send_command","Getting ready to send: op %02X fan %02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
+          // check to see if the op, fan, or settemp send vars are not empty; if yes then send it, if no then just send the current val
+          if (xyeVars.opBytesSend) { 
+            ESP_LOGI("mideaXYE_UART.send_command", "New op value to send: 0x%02X", xyeVars.opBytesSend);
+            xyeVars.sendData[SEND_MODE] = *xyeVars.opBytesSend; xyeVars.opBytesSend.reset(); 
+            } else { xyeVars.sendData[SEND_MODE] = xyeVars.opBytes; }
+          
+          if (xyeVars.fanBytesSend) { 
+            ESP_LOGI("mideaXYE_UART.send_command", "New fan value to send: 0x%02X", xyeVars.fanBytesSend);
+            xyeVars.sendData[SEND_FAN] = *xyeVars.fanBytesSend; xyeVars.fanBytesSend.reset(); 
+            } else { xyeVars.sendData[SEND_MODE] = xyeVars.fanBytes; }
+          
+          if (xyeVars.setTempSend) { 
+            ESP_LOGI("mideaXYE_UART.send_command", "New setTemp value to send: 0x%02X", xyeVars.setTempSend);
+            xyeVars.sendData[SEND_TEMP] = *xyeVars.setTempSend; xyeVars.setTempSend.reset(); 
+          } else { xyeVars.sendData[SEND_TEMP] = xyeVars.setTemp; }
+
           uint8_t i=0;
           uint32_t crc=0;
           int len=16;
@@ -193,7 +205,7 @@ sensor:
       }
 
       // now check if we need to send new data
-      // TODO: should this be earlier in the script to prevent overwriting send data like setTemp etc? Or perhaps use different vars to set?
+      // FIXME: should this be earlier in the script to prevent overwriting send data like setTemp etc? Or perhaps use different vars to set?
       if (xyeVars.newInput)
       {
         // give at least 5 cycles to accumulate changes (multiple presses of the temperature button for example)

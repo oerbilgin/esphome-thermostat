@@ -36,12 +36,15 @@ using namespace esphome;
 class xyeVars {
   public:
     uint8_t setTemp = 70;
+	uint8_t fanBytes = 0x00;
+    uint8_t opBytes = 0x00;
+	std::optional<uint8_t> setTempSend;
+	std::optional<uint8_t> fanBytesSend;
+    std::optional<uint8_t> opBytesSend;
     uint8_t sendTimeCount = 0;
     bool newInput = false;
     std::string op = "off";
     std::string fanMode = "auto";
-    uint8_t fanBytes = 0x00;
-    uint8_t opBytes = 0x00;
     bool doneReading = false;
     uint8_t waitCount = 0;
     uint8_t prevResp = 0;
