@@ -295,6 +295,9 @@ script:
               - fan_selector
               - next_hvac_mode
               - hvac_mode_label
+          - lvgl.widget.update:
+              id: turbo_mode_switch
+              opa: 20%
     - if:
         condition:
           lambda: 'return mode == "cool";'
@@ -328,6 +331,10 @@ script:
               - setpoint
               - fan_selector
               - hvac_mode_label
+          - lvgl.widget.update:
+              id: turbo_mode_switch
+              opa: 100% # FIXME: figure out how to do turbo mode
+
     - if:
         condition:
           lambda: 'return mode == "heat";'
@@ -361,6 +368,9 @@ script:
               - setpoint
               - fan_selector
               - hvac_mode_label
+          - lvgl.widget.update:
+              id: turbo_mode_switch
+              opa: 20%
     - if:
         condition:
           lambda: 'return mode == "fan_only";'
@@ -388,6 +398,9 @@ script:
           - lvgl.widget.show:
               - fan_mode_thermostat
               - fan_selector
+          - lvgl.widget.update:
+              id: turbo_mode_switch
+              opa: 20%
     - if:
         condition:
           lambda: 'return mode == "auto";'
@@ -417,6 +430,9 @@ script:
               - auto_mode_thermostat
               - fan_selector
               - setpoint
+          - lvgl.widget.update:
+              id: turbo_mode_switch # FIXME: can we do turbo in auto mode?
+              opa: 20%
 
 - id: update_fan_mode_ui
   mode: restart
@@ -851,6 +867,17 @@ font:
   - file:
       url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
       type: web
+    id: mdi_icons_24
+    size: 24
+    bpp: 8
+    glyphs: [
+      "\U000F032A",  # leaf - quiet mode option 2, if it's really eco mode or just quiet
+      "\U000F0904",  # moon - quiet mode option 1
+      "\U000F059D",  # turbo icon (windy)
+    ]
+  - file:
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
+      type: web
     id: mdi_icons_30
     size: 30
     bpp: 8
@@ -981,7 +1008,7 @@ lvgl:
                   bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
                   text_color: !lambda 'return my_colors::main_text_color;'
-                  checkable: true
+                  checkable: false # we maintain checks via the update_hvac_mode_ui
                   checked:
                     bg_color: !lambda 'return my_colors::arc_cool_knob;'
                   on_click:
@@ -1009,7 +1036,7 @@ lvgl:
                   bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
                   text_color: !lambda 'return my_colors::main_text_color;'
-                  checkable: true
+                  checkable: false # we maintain checks via the update_hvac_mode_ui
                   checked:
                     bg_color: !lambda 'return my_colors::arc_heat_knob;'
                   on_click:
@@ -1037,7 +1064,7 @@ lvgl:
                   bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
                   text_color: !lambda 'return my_colors::main_text_color;'
-                  checkable: true
+                  checkable: false # we maintain checks via the update_hvac_mode_ui
                   checked:
                     bg_color: !lambda 'return my_colors::arc_fan_knob;'
                   on_click:
@@ -1065,6 +1092,7 @@ lvgl:
                   bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
                   text_color: !lambda 'return my_colors::main_text_color;'
+                  checkable: false
                   # FIXME: auto mode is disabled for now
                   hidden: true
                   on_click:
@@ -1079,7 +1107,7 @@ lvgl:
                         width: 48
                         height: 48
                         align: CENTER
-                        text: "\U000F0393"
+                        text: "\U000F1B17"
                         text_font: mdi_icons_48
                         text_align: CENTER
                         text_color: !lambda 'return my_colors::main_text_color;'
@@ -1092,7 +1120,7 @@ lvgl:
                   bg_color: !lambda 'return my_colors::button_bg_color;'
                   radius: 89
                   text_color: !lambda 'return my_colors::main_text_color;'
-                  checkable: true
+                  checkable: false # we maintain checks via the update_hvac_mode_ui
                   checked:
                     bg_color: !lambda 'return my_colors::off_button_checked;'
                   state:
@@ -1113,6 +1141,108 @@ lvgl:
                         text_font: montserrat_48
                         text_align: CENTER
                         text_color: !lambda 'return my_colors::main_text_color;'
+        - switch:
+            id: quiet_mode_switch
+            x: 295
+            y: 370
+            width: 80
+            height: 40
+            state:
+              checked: false
+            bg_color: !lambda 'return my_colors::off_button_checked;'
+            indicator:
+              checked:
+                bg_color: !lambda 'return my_colors::arc_fan_indicator;'
+            knob:
+              bg_color: !lambda 'return my_colors::button_bg_color;'
+              border_color: !lambda 'return my_colors::off_button_checked;'
+              border_width: 1
+            on_value:
+              then:
+                if:
+                  condition:
+                    lambda: 'return x;' # x is true if checked/on
+                  then:
+                    - lvgl.widget.show: quiet_on_icon
+                    - lvgl.widget.hide: quiet_off_icon
+                  else:
+                    - lvgl.widget.hide: quiet_on_icon
+                    - lvgl.widget.show: quiet_off_icon
+            widgets:
+              - label:
+                  id: quiet_on_icon
+                  x: 12
+                  y: 8
+                  width: 24
+                  height: 24
+                  hidden: true
+                  text: "\U000F0904"
+                  text_font: mdi_icons_24
+                  text_align: CENTER
+                  text_color: !lambda 'return my_colors::text_light_gray;'
+
+              - label:
+                  id: quiet_off_icon
+                  x: 45
+                  y: 8
+                  width: 24
+                  height: 24
+                  text: "\U000F0904"
+                  text_font: mdi_icons_24
+                  text_align: CENTER
+                  text_color: !lambda 'return my_colors::main_text_color;'
+        - switch:
+            id: turbo_mode_switch
+            x: 295
+            y: 430
+            width: 80
+            height: 40
+            opa: 20%
+            state:
+              checked: false
+            bg_color: !lambda 'return my_colors::off_button_checked;'
+            indicator:
+              checked:
+                bg_color: !lambda 'return my_colors::arc_cool_indicator;'
+            knob:
+              bg_color: !lambda 'return my_colors::button_bg_color;'
+              border_color: !lambda 'return my_colors::off_button_checked;'
+              border_width: 1
+            on_value:
+              then:
+                if:
+                  condition:
+                    lambda: 'return x;' # x is true if checked/on
+                  then:
+                    - lvgl.widget.show: turbo_on_icon
+                    - lvgl.widget.hide: turbo_off_icon
+                  else:
+                    - lvgl.widget.hide: turbo_on_icon
+                    - lvgl.widget.show: turbo_off_icon
+              
+            widgets:
+              - label:
+                  id: turbo_on_icon
+                  x: 12
+                  y: 8
+                  width: 24
+                  height: 24
+                  hidden: true
+                  text: "\U000F059D"
+                  text_font: mdi_icons_24
+                  text_align: CENTER
+                  text_color: !lambda 'return my_colors::text_light_gray;'
+
+              - label:
+                  id: turbo_off_icon
+                  x: 45
+                  y: 8
+                  width: 24
+                  height: 24
+                  text: "\U000F059D"
+                  text_font: mdi_icons_24
+                  text_align: CENTER
+                  text_color: !lambda 'return my_colors::main_text_color;'
 
         - label:
             id: todays_date
@@ -1631,30 +1761,6 @@ lvgl:
                   align: LEFT_MID
                   text: "\U000F0210"
                   text_font: mdi_icons_34
-                  text_align: CENTER
-                  text_color: !lambda 'return my_colors::main_text_color;'
-
-        - button:
-            id: turbo_button
-            x: 301
-            y: 386
-            width: 69
-            height: 85
-            bg_color: !lambda 'return my_colors::button_bg_color;'
-            radius: 120
-            text_color: !lambda 'return my_colors::main_text_color;'
-            hidden: true
-            checkable: true
-            widgets:
-              - label:
-                  id: turbo_icon
-                  x: 0
-                  y: 0
-                  width: 48
-                  height: 48
-                  align: CENTER
-                  text: "\U000F059D"
-                  text_font: mdi_icons_48
                   text_align: CENTER
                   text_color: !lambda 'return my_colors::main_text_color;'
 

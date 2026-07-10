@@ -119,8 +119,7 @@ interval:
             id(jiggle_internal_setpoint).execute(current_internal_setpoint, temporary_setpoint);
           } else ESP_LOGD(
               "mideaXYE.setpoint_watcher",
-              "temporary_setpoint is zero, no need to jiggle.",
-              hvac_state.c_str(), temp_delta
+              "temporary_setpoint is zero, no need to jiggle."
             );
   # update sensors
   - id: update_sensors

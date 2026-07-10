@@ -13,6 +13,8 @@
 #define SEND_MODE 6
 #define SEND_FAN 7
 #define SEND_TEMP 8
+#define SEND_ECO 9 // TODO: implement
+#define SEND_TURBO 10 // TODO: documented as turbo position but need to test
 #define SEND_CRC 14
 #define SEND_LEN 16
 
@@ -47,7 +49,7 @@ class xyeVars {
     bool waitingForResponse = false;
     bool commandSent = false;
     uint8_t recData[30] = { 
-      0x00, // 0 preamble; usually 0xAA
+      		0x00, // x 0 preamble; usually 0xAA
 			0x00, // x 1 response code: 0xc0 - Query, 0xc3 - Set, 0xC4 - Extended Query?, OxC6 - Follow Me, 0xcc - Lock, 0xcd - Unlock 
 			0x00, // x 2 to master, 0x00 or 0x80
 			0x00, // x 3 destination, always 0x00
