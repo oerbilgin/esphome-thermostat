@@ -304,6 +304,9 @@ script:
           - lvgl.widget.update:
               id: turbo_mode_switch
               opa: 20%
+              checkable: false
+              state:
+                checked: false
     - if:
         condition:
           lambda: 'return mode == "cool";'
@@ -340,6 +343,9 @@ script:
           - lvgl.widget.update:
               id: turbo_mode_switch
               opa: 100% # TODO: figure out how to do turbo mode
+              checkable: true
+              state:
+                checked: false
 
     - if:
         condition:
@@ -377,6 +383,9 @@ script:
           - lvgl.widget.update:
               id: turbo_mode_switch
               opa: 20%
+              checkable: false
+              state:
+                checked: false
     - if:
         condition:
           lambda: 'return mode == "fan_only";'
@@ -407,6 +416,9 @@ script:
           - lvgl.widget.update:
               id: turbo_mode_switch
               opa: 20%
+              checkable: false
+              state:
+                checked: false
     - if:
         condition:
           lambda: 'return mode == "auto";'
@@ -439,6 +451,9 @@ script:
           - lvgl.widget.update:
               id: turbo_mode_switch # TODO: can we do turbo in auto mode?
               opa: 20%
+              checkable: false
+              state:
+                checked: false
 
 - id: update_fan_mode_ui
   mode: restart
@@ -877,8 +892,6 @@ font:
     size: 24
     bpp: 8
     glyphs: [
-      "\U000F032A",  # leaf - quiet mode option 2, if it's really eco mode or just quiet
-      "\U000F0904",  # moon - quiet mode option 1
       "\U000F059D",  # turbo icon (windy)
     ]
   - file:
@@ -1147,56 +1160,6 @@ lvgl:
                         text_font: montserrat_48
                         text_align: CENTER
                         text_color: !lambda 'return my_colors::main_text_color;'
-        - switch:
-            id: quiet_mode_switch
-            x: 295
-            y: 370
-            width: 80
-            height: 40
-            state:
-              checked: false
-            bg_color: !lambda 'return my_colors::off_button_checked;'
-            indicator:
-              checked:
-                bg_color: !lambda 'return my_colors::arc_fan_indicator;'
-            knob:
-              bg_color: !lambda 'return my_colors::button_bg_color;'
-              border_color: !lambda 'return my_colors::off_button_checked;'
-              border_width: 1
-            on_value:
-              then:
-                if:
-                  condition:
-                    lambda: 'return x;' # x is true if checked/on
-                  then:
-                    - lvgl.widget.show: quiet_on_icon
-                    - lvgl.widget.hide: quiet_off_icon
-                  else:
-                    - lvgl.widget.hide: quiet_on_icon
-                    - lvgl.widget.show: quiet_off_icon
-            widgets:
-              - label:
-                  id: quiet_on_icon
-                  x: 12
-                  y: 8
-                  width: 24
-                  height: 24
-                  hidden: true
-                  text: "\U000F0904"
-                  text_font: mdi_icons_24
-                  text_align: CENTER
-                  text_color: !lambda 'return my_colors::text_light_gray;'
-
-              - label:
-                  id: quiet_off_icon
-                  x: 45
-                  y: 8
-                  width: 24
-                  height: 24
-                  text: "\U000F0904"
-                  text_font: mdi_icons_24
-                  text_align: CENTER
-                  text_color: !lambda 'return my_colors::main_text_color;'
         - switch:
             id: turbo_mode_switch
             x: 295

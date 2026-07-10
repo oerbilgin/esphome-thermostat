@@ -75,6 +75,12 @@ number:
       - lambda: |-
           xyeVars.fanBytesSend = x;
           xyeVars.fanBytes = x;
+          xyeVars.recData[REC_FAN] = x;
+    on_value:
+      - lambda: |-
+          xyeVars.fanBytesSend = x;
+          xyeVars.fanBytes = x;
+          xyeVars.recData[REC_FAN] = x;
 
   - platform: template
     name: "Simulated xyeVars.opBytes"
@@ -89,6 +95,28 @@ number:
     set_action:
       - lambda: |-
           xyeVars.opBytes = x;
+          xyeVars.recData[REC_MODE] = x;
+
+  - platform: template
+    name: "Simulated xyeVars.opBytesSend"
+    id: xyeVars_opBytesSend
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 255
+    update_interval: $sensor_update_interval
+    lambda: |-
+      return xyeVars.opBytesSend;
+    set_action:
+      - lambda: |-
+          xyeVars.opBytesSend = x;
+          xyeVars.opBytes = x;
+          xyeVars.recData[REC_MODE] = x;
+    on_value:
+      - lambda: |-
+          xyeVars.opBytesSend = x;
+          xyeVars.opBytes = x;
+          xyeVars.recData[REC_MODE] = x;
 
   - platform: template
     name: "Simulated xyeVars.setTemp"
@@ -108,6 +136,29 @@ number:
     on_value:
       - lambda: 'xyeVars.recData[REC_TEMP] = x;'
   
+  - platform: template
+    name: "Simulated xyeVars.setTempSend"
+    id: xyeVars_setTempSend
+    step: 1
+    mode: box
+    min_value: 0
+    max_value: 100
+    # keep it synced with setTemp if that changes
+    update_interval: $sensor_update_interval
+    lambda: |-
+      return xyeVars.setTempSend;
+    set_action:
+      # keep it synced with setTemp if our simulated value changes
+      - lambda: |-
+          xyeVars.setTemp = x;
+          xyeVars.setTempSend = x;
+          xyeVars.recData[REC_TEMP] = x;
+    on_value:
+      - lambda: |-
+          xyeVars.setTemp = x;
+          xyeVars.setTempSend = x;
+          xyeVars.recData[REC_TEMP] = x;
+
   - platform: template
     name: "Simulated T1 temp"
     id: t1_sim

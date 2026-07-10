@@ -26,7 +26,6 @@ script:
         xyeVars.waitingToSend = false;
         xyeVars.commandSent = true;
 
-# FIXME: some data are being sent immediately and causing all sorts of weirdness but we need to wait until everything's initialized before allowing to send any data!
 # this will construct the command to send to the air handler, called by the input sensors
 # when required.  It tries to not send if we're in the middle of receiving.
   - id: send_command
