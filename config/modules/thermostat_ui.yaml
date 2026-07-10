@@ -89,30 +89,42 @@ script:
         lv_arc_set_value(id(setpoint_arc), visible_setpoint);
         lv_label_set_text(id(setpoint_number), (to_string((int)visible_setpoint) + "°F").c_str());
 
-        // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
-        // Custom logic to get the controller to get to the desired temperature.
-        // calculate the error between the actual temp and the t1 temp
-        float error = id(t1).state - id(average_house_temperature).state;
-        ESP_LOGD("thermostat_ui.update_setpoints","t1: %f, actual: %f, error: %f",id(t1).state,id(average_house_temperature).state,error);
+        uint8_t internal_setpoint_int;
+        // only do setpoint math if both sensors are available
+        if (!std::isnan(id(t1).state) && !std::isnan(id(average_house_temperature).state)) {
 
-        // add the error to the visible setpoint to get the internal setpoint
-        // Ex1: if t1 sees 70 and its actually 75, the error is -5
-        // Ex1: if my setpoint is 75, the handler should be off
-        // Ex1: internal setpoint = 75 + -5 = 70, so the handler will not turn on
+          // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
+          // Custom logic to get the controller to get to the desired temperature.
+          // calculate the error between the actual temp and the t1 temp
+          float error = id(t1).state - id(average_house_temperature).state;
+          ESP_LOGD("thermostat_ui.update_setpoints","t1: %f, actual: %f, error: %f",id(t1).state,id(average_house_temperature).state,error);
 
-        // Ex2: if t1 sees 80 and its actually 75, the error is +5
-        // Ex2: if my setpoint is 80, the handler should be on
-        // Ex2: internal setpoint = 80 + 5 = 85, so the handler will turn on to heat
+          // add the error to the visible setpoint to get the internal setpoint
+          // Ex1: if t1 sees 70 and its actually 75, the error is -5
+          // Ex1: if my setpoint is 75, the handler should be off
+          // Ex1: internal setpoint = 75 + -5 = 70, so the handler will not turn on
 
-        // Ex3: if t1 sees 70 and its actually 75, the error is -5
-        // Ex3: my setpoint is 70, the handler should be on
-        // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
-        float internal_setpoint = visible_setpoint + error;
-        ESP_LOGD("thermostat_ui.update_setpoints","visible setpoint: %f, new internal setpoint: %f",visible_setpoint,internal_setpoint);
+          // Ex2: if t1 sees 80 and its actually 75, the error is +5
+          // Ex2: if my setpoint is 80, the handler should be on
+          // Ex2: internal setpoint = 80 + 5 = 85, so the handler will turn on to heat
 
-        // convert to uint8_t for sending to the midea unit
-        uint8_t internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
-        ESP_LOGD("thermostat_ui.update_setpoints","internal setpoint int: %d",internal_setpoint_int);
+          // Ex3: if t1 sees 70 and its actually 75, the error is -5
+          // Ex3: my setpoint is 70, the handler should be on
+          // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
+          float internal_setpoint = visible_setpoint + error;
+          ESP_LOGD("thermostat_ui.update_setpoints","visible setpoint: %f, new internal setpoint: %f",visible_setpoint,internal_setpoint);
+
+          // convert to uint8_t for sending to the midea unit
+          internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
+          ESP_LOGD("thermostat_ui.update_setpoints","internal setpoint int: %d",internal_setpoint_int);
+        } else {
+          // if the sensors/homeassistant are offline, we can at least still use the thermostat this way (though the setpoint will be compared against the t1 sensor on the unit)
+          // TODO: eventually use an onboard sensor for this possiblity.
+          ESP_LOGW("thermostat_ui.update_setpoints",
+            "At least one of temperature sensors 't1' and 'average_house_temperature' were offline, setting internal setpoint to the visible setpoint for now."
+          );
+          internal_setpoint_int = visible_setpoint;
+        }
 
         // set the number representing the internal setpoint of the midea unit
         // this method triggers the set_action
