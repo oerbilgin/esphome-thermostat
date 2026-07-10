@@ -333,7 +333,7 @@ script:
               - hvac_mode_label
           - lvgl.widget.update:
               id: turbo_mode_switch
-              opa: 100% # FIXME: figure out how to do turbo mode
+              opa: 100% # TODO: figure out how to do turbo mode
 
     - if:
         condition:
@@ -431,7 +431,7 @@ script:
               - fan_selector
               - setpoint
           - lvgl.widget.update:
-              id: turbo_mode_switch # FIXME: can we do turbo in auto mode?
+              id: turbo_mode_switch # TODO: can we do turbo in auto mode?
               opa: 20%
 
 - id: update_fan_mode_ui
@@ -1094,7 +1094,7 @@ lvgl:
                   radius: 89
                   text_color: !lambda 'return my_colors::main_text_color;'
                   checkable: false
-                  # FIXME: auto mode is disabled for now
+                  # TODO: auto mode is disabled for now
                   hidden: true
                   on_click:
                     - select.set:

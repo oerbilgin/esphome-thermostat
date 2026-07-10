@@ -9,8 +9,6 @@ substitutions:
 script:
 # This script temporarily sets the internal setpoint value
 # need to do it in a separate script because the delay step is not blocking this way vs. in cpp
-# FIXME: if the visible setpoint gets changed while we are in the delay, it will set the internal one back to the old value, overriding user intention
-# can we just trigger the update setpoints script at the end of this one to reset it? would this be better than jiggering it back?
   - id: jiggle_internal_setpoint
     mode: single
     parameters:
@@ -24,9 +22,6 @@ script:
       - script.execute: 
           id: update_setpoints
           visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
-      # - number.set:
-      #     id: internal_set_point
-      #     value: !lambda 'return current_internal_setpoint;'
 
 interval:
 # This interval checks the setpoints and current temps and hvac status
@@ -85,7 +80,7 @@ interval:
               hvac_state.c_str(), temp_delta, temporary_setpoint
             );
           } else if (hvac_mode == "auto") {
-              // FIXME: implement this
+              // TODO: implement this
               ESP_LOGW(
                 "mideaXYE.setpoint_watcher",
                 "Auto mode jiggle not implemented!"
