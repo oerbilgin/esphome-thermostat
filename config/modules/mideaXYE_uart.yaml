@@ -260,14 +260,17 @@ sensor:
       // now check if we need to send new data
       if (xyeVars.newInput)
       {
-        // give at least 5 cycles to accumulate changes (multiple presses of the temperature button for example)
-        if (xyeVars.sendTimeCount > 4) {
-          xyeVars.sendTimeCount = 0;
-          id(send_command).execute();
-        } else 
-        {
-          xyeVars.sendTimeCount += 1;
-        }
+        // do not wait to send any commands
+        id(send_command).execute();
+        // TODO: delete the below code if this new pattern doesnt cause any issues
+        // // give at least 5 cycles to accumulate changes (multiple presses of the temperature button for example)
+        // if (xyeVars.sendTimeCount > 4) {
+        //   xyeVars.sendTimeCount = 0;
+        //   id(send_command).execute();
+        // } else 
+        // {
+        //   xyeVars.sendTimeCount += 1;
+        // }
       }
       return 0;
 
