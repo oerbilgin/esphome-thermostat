@@ -503,10 +503,10 @@ script:
       } else {
         status_bg_color = my_colors::main_background_color;
         status_text_color = my_colors::text_red;
+        ESP_LOGE("thermostat_ui.update_hvac_status_ui", "unexpected hvac_status_str: '%s'!", hvac_status_str.c_str());
         hvac_status_str = "\U000F002A";
         // set font to icons
         lv_obj_set_style_text_font(id(hvac_status_label), mdi_icons_30->get_lv_font(), LV_PART_MAIN);
-        ESP_LOGE("thermostat_ui.update_hvac_status_ui", "unexpected hvac_status_str: '%s'!", hvac_status_str.c_str());
       }
       
       lv_label_set_text(id(hvac_status_label), hvac_status_str.c_str());
@@ -590,7 +590,6 @@ sensor:
     entity_id: sensor.average_house_temperature
     device_class: temperature
     unit_of_measurement: "°F"
-    internal: true
     on_value:
       then:
         - lvgl.label.update:

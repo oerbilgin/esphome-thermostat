@@ -268,7 +268,6 @@ sensor:
     name: Internal Setpoint
     update_interval: never # state gets published via the interval above
     id: internal_setpoint_sensor
-    entity_category: "diagnostic"
 
 
 text_sensor:
@@ -312,6 +311,8 @@ text_sensor:
         ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
         result = "Diffusing";
       } else if (result == "Diffusing" && hvac_mode == "off") {
+        // FIXME: mode and fan sometimes are out of sync, by milliseconds resulting in this code path.
+        // FIXME: if modebytes gets updated it doesnt seem like this lambda is being triggered? what does opMode lambda do?
         ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to err.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
         result = "err";
       }
