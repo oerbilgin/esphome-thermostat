@@ -904,6 +904,58 @@ text_sensor:
               id: days_condition_icon
               text: "\U000F002A"
               text_color: !lambda 'return my_colors::text_red;'
+  
+  - platform: homeassistant
+    id: nws_alert_1
+    entity_id: sensor.nws_alert_slot_1
+    internal: true
+    on_raw_value:
+      then:
+        if:
+          condition:
+            lambda: 'return (x != "unavailable");'
+          then:
+            lvgl.label.update:
+              id: weather_hazard_1
+              text: !lambda 'return std::string(get_weather_hazard_icon(x));'
+          else:
+            lvgl.label.update:
+              id: weather_hazard_1
+              text: ""
+  - platform: homeassistant
+    id: nws_alert_2
+    entity_id: sensor.nws_alert_slot_2
+    internal: true
+    on_raw_value:
+      then:
+        if:
+          condition:
+            lambda: 'return (x != "unavailable");'
+          then:
+            lvgl.label.update:
+              id: weather_hazard_2
+              text: !lambda 'return std::string(get_weather_hazard_icon(x));'
+          else:
+            lvgl.label.update:
+              id: weather_hazard_2
+              text: ""
+  - platform: homeassistant
+    id: nws_alert_3
+    entity_id: sensor.nws_alert_slot_3
+    internal: true
+    on_raw_value:
+      then:
+        if:
+          condition:
+            lambda: 'return (x != "unavailable");'
+          then:
+            lvgl.label.update:
+              id: weather_hazard_3
+              text: !lambda 'return std::string(get_weather_hazard_icon(x));'
+          else:
+            lvgl.label.update:
+              id: weather_hazard_3
+              text: ""
 
 
 # External icon fonts - auto-generated for icons used in this design
@@ -941,6 +993,22 @@ font:
     bpp: 8
     glyphs: [
       "\U000F0210",  # Fan
+      "\U000F0C89",  # hazard triangle
+      "\U000F0EF8",  # lightning alert
+      "\U000F0596",  # rain alert
+      "\U000F00B8",  # air quality alert
+      "\U000F0EFA",  # flood alert
+      "\U000F0092",  # beach alert
+      "\U000F1B5A",  # dust alert
+      "\U000F059D",  # wind alert
+      "\U000F0591",  # fog alert
+      "\U000F1799",  # smoke alert
+      "\U000F0F29",  # cold alert
+      "\U000F0F37",  # heat alert
+      "\U000F15D7",  # fire alert
+      "\U000F0240",  # redflag
+      "\U000F1A81",  # tsunami
+      "\U000F1BE0",  # cloud alert (default)
     ]
   - file:
       url: "https://cdn.jsdelivr.net/npm/@mdi/font@latest/fonts/materialdesignicons-webfont.ttf"
@@ -984,12 +1052,53 @@ lvgl:
   
 
   pages:
-    - id: canvas_9
+    - id: canvas
       bg_color: !lambda 'return my_colors::main_background_color;'
       bg_opa: 100%
       pad_all: 0
       scrollbar_mode: "OFF"
       widgets:
+        - obj:
+            id: weather_hazards_container
+            x: 193
+            y: 40
+            width: 110
+            height: 34
+            bg_opa: 0%
+            border_width: 0
+            border_opa: 0%
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            widgets:
+              - label:
+                  id: weather_hazard_1
+                  x: 0
+                  y: 0
+                  align: LEFT_MID
+                  text: ""
+                  text_font: mdi_icons_34
+                  text_color: !lambda 'return my_colors::text_red;'
+                  text_align: CENTER
+              - label:
+                  id: weather_hazard_2
+                  x: 0
+                  y: 0
+                  align: CENTER
+                  text: ""
+                  text_font: mdi_icons_34
+                  text_color: !lambda 'return my_colors::text_red;'
+                  text_align: CENTER
+              - label:
+                  id: weather_hazard_3
+                  x: 0
+                  y: 0
+                  align: RIGHT_MID
+                  text: ""
+                  text_font: mdi_icons_34
+                  text_color: !lambda 'return my_colors::text_red;'
+                  text_align: CENTER
+
+
         - obj:
             id: hvac_status_container
             x: 391 # $thermostat_box_x_pos + 9

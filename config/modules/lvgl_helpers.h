@@ -202,3 +202,125 @@ lv_color_t get_wind_bg_color(float val) {
         return my_colors::bg_maroon;
     }
 }
+
+// Helper function to check if an item is in a flash-resident list
+bool categoryContains(std::string_view input, std::initializer_list<std::string_view> list) {
+    for (auto item : list) {
+        if (item == input) return true;
+    }
+    return false;
+}
+
+std::string_view get_weather_hazard_icon(std::string_view weather_event) {
+    ESP_LOGD("lvgl_helpers.get_weather_hazard_icon", "Getting icon for event: '%.*s'", (int)weather_event.length(), weather_event.data());
+    if (categoryContains(weather_event, {
+        "Hazardous Weather Outlook",
+        "Hazardous Materials Warning",
+        "Severe Weather Statement"
+    })) {return "\U000F0C89";}
+    if (categoryContains(weather_event, {
+        "Severe Thunderstorm Warning",
+        "Severe Thunderstorm Watch"
+    })) {return "\U000F0EF8";}
+    if (categoryContains(weather_event, {
+        "Storm Surge Warning",
+        "Storm Surge Watch",
+        "Storm Warning",
+        "Storm Watch",
+        "Winter Storm Warning",
+        "Winter Storm Watch",
+        "Winter Weather Advisory",
+        "Tropical Cyclone Local Statement",
+        "Tropical Storm Warning",
+        "Tropical Storm Watch",
+        "Typhoon Warning",
+        "Typhoon Watch"
+    })) {return "\U000F0596";}
+    if (categoryContains(weather_event, {
+        "Air Quality Alert",
+        "Air Stagnation Advisory",
+        "Ashfall Advisory",
+        "Ashfall Warning"
+    })) {return "\U000F00B8";}
+    if (categoryContains(weather_event, {
+        "Coastal Flood Advisory",
+        "Coastal Flood Statement",
+        "Coastal Flood Warning",
+        "Coastal Flood Watch",
+        "Flash Flood Statement",
+        "Flash Flood Warning",
+        "Flash Flood Watch",
+        "Flood Advisory",
+        "Flood Statement",
+        "Flood Warning",
+        "Flood Watch",
+        "Lakeshore Flood Advisory",
+        "Lakeshore Flood Statement",
+        "Lakeshore Flood Warning",
+        "Lakeshore Flood Watch"
+    })) {return "\U000F0EFA";}
+    if (categoryContains(weather_event, {
+        "Beach Hazards Statement",
+        "High Surf Advisory",
+        "High Surf Warning",
+        "Rip Current Statement"
+    })) {return "\U000F0092";}
+    if (categoryContains(weather_event, {
+        "Blowing Dust Advisory",
+        "Blowing Dust Warning",
+        "Dust Advisory",
+        "Dust Storm Warning"
+    })) {return "\U000F1B5A";}
+    if (categoryContains(weather_event, {
+        "Brisk Wind Advisory",
+        "Extreme Wind Warning",
+        "Gale Warning",
+        "Gale Watch",
+        "High Wind Warning",
+        "High Wind Watch",
+        "Wind Advisory",
+        "Lake Wind Advisory"
+    })) {return "\U000F059D";}
+    if (categoryContains(weather_event, {
+        "Dense Fog Advisory"
+    })) {return "\U000F0591";}
+    if (categoryContains(weather_event, {
+        "Dense Smoke Advisory"
+    })) {return "\U000F1799";}
+    if (categoryContains(weather_event, {
+        "Cold Weather Advisory",
+        "Extreme Cold Warning",
+        "Extreme Cold Watch",
+        "Freeze Warning",
+        "Freeze Watch",
+        "Freezing Fog Advisory",
+        "Freezing Spray Advisory",
+        "Frost Advisory",
+        "Heavy Freezing Spray Warning",
+        "Heavy Freezing Spray Watch",
+        "Ice Storm Warning",
+        "Lake Effect Snow Warning"
+    })) {return "\U000F0F29";}
+    if (categoryContains(weather_event, {
+        "Extreme Heat Warning",
+        "Extreme Heat Watch",
+        "Heat Advisory"
+    })) {return "\U000F0F37";}
+    if (categoryContains(weather_event, {
+        "Extreme Fire Danger",
+        "Fire Warning",
+        "Fire Weather Watch"
+    })) {return "\U000F15D7";}
+    if (categoryContains(weather_event, {
+        "Red Flag Warning"
+    })) {return "\U000F0240";}
+    if (categoryContains(weather_event, {
+        "Tsunami Advisory",
+        "Tsunami Warning",
+        "Tsunami Watch"
+    })) {return "\U000F1A81";}
+    
+    // not in any of the above, return default
+    return "\U000F1BE0";
+
+}
