@@ -323,8 +323,8 @@ text_sensor:
         ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
         result = "Diffusing";
       } else if (result == "Diffusing" && hvac_mode == "off") {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to err.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
-        result = "err";
+        ESP_LOGW("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Idle.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
+        result = "Idle";
       }
       
       // final check if the fan is actually on
