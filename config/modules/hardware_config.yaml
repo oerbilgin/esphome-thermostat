@@ -4,6 +4,7 @@
 esphome:
   platformio_options:
     build_flags: 
+      - -Os # Force compiler to optimize strictly for size. didnt do anything
       - "-DBOARD_HAS_PSRAM"
       # build flags below added to help with screen tearing with wifi, in the order i added them
       # Boosts internal DMA burst sizes to reduce bus contention
@@ -17,8 +18,9 @@ esphome:
       - "-DCONFIG_ESP_WIFI_TX_BUFFER_TYPE=1"
       # Forces instruction fetching directly to cache, reducing PSRAM roundtrips
       # Adding these finally got rid of all the flicker and tearing!
-      - "-DCONFIG_SPIRAM_FETCH_INSTRUCTIONS=1"
-      - "-DCONFIG_SPIRAM_RODATA=1"
+      # FIXME: after moving these to the esp block, is screen flicker still there?
+      # - "-DCONFIG_SPIRAM_FETCH_INSTRUCTIONS=1"
+      # - "-DCONFIG_SPIRAM_RODATA=1"
     board_build.arduino.memory_type: qio_opi # dont change or it will destabilize display
     board_build.flash_mode: dio
     board_upload.maximum_ram_size: 524288
@@ -26,11 +28,22 @@ esphome:
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
+  partitions: large_partitions.csv
   framework:
     type: esp-idf
-    # Add this block to fix the lwIP bridge range constraint:
     sdkconfig_options:
+      # fix the lwIP bridge range constraint:
       CONFIG_LWIP_BRIDGEIF_MAX_PORTS: "1"
+      # move out of IRAM
+      CONFIG_SPI_FLASH_ROM_IMPL: "n"
+      CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED: "n"
+      # The following lines move Wi-Fi cache functions out of IRAM
+      CONFIG_ESP_WIFI_IRAM_OPT: "n"
+      CONFIG_ESP_WIFI_RX_IRAM_OPT: "n"
+
+      # FIXME: gemini suggested to move these here but need to verify screen flicker is fixed!
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: "y"
+      CONFIG_SPIRAM_RODATA: "y"
 
 logger:
   hardware_uart: USB_SERIAL_JTAG
