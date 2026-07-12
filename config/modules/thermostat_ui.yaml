@@ -2246,16 +2246,6 @@ lvgl:
             text_align: CENTER
             text_color: !lambda 'return my_colors::text_dark_gray;'
         - label:
-            id: hass_status_icon
-            x: 711
-            y: 10
-            width: 32
-            height: 32
-            text: "\uF015"
-            text_font: montserrat_32
-            text_align: CENTER
-            text_color: !lambda 'return my_colors::text_dark_gray;'
-        - label:
             id: days_condition_icon
             x: 15
             y: 15
