@@ -1808,7 +1808,6 @@ lvgl:
                   height: 48
                   options:
                     - "Auto"
-                    - "Quiet"
                     - "Low"
                     - "Medium"
                     - "High"
@@ -1829,13 +1828,6 @@ lvgl:
                           - select.set:
                               id: fanMode
                               option: "auto"
-                    - if:
-                        condition:
-                          lambda: 'return x == 1;'
-                        then:
-                          - select.set:
-                              id: fanMode
-                              option: "low"
                     - if:
                         condition:
                           lambda: 'return x == 2;'
