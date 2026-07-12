@@ -438,7 +438,7 @@ select:
             ESP_LOGI("mideaXYE.fanMode","selected 0x%x, pressing button to send",
             xyeVars.fanBytesSend ? static_cast<unsigned int>(*xyeVars.fanBytesSend) : 0xDEADBEEF);
             xyeVars.newInput = true;
-            // id(fanMode).publish_state(x); // Dont think we need to publish state since the true value will round trip in recdata?
+            id(fanMode).publish_state(x); // Be optimistic here, since any real value will be published back on the roundtrip
           }
     on_value:
       then:
@@ -511,7 +511,7 @@ select:
             ESP_LOGI("mideaXYE.opMode","selected %x for mode, setting send flag",
             xyeVars.opBytesSend ? static_cast<unsigned int>(*xyeVars.opBytesSend) : 0xDEADBEEF);
             xyeVars.newInput = true;
-            // id(opMode).publish_state(x); // dont think we need to do this since it will eventually roundtrip with recdata?
+            id(opMode).publish_state(x); // be optimistic here since the true value will eventually publish
           }
     on_value:
       then:
@@ -540,7 +540,7 @@ number:
             ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
             xyeVars.setTempSend = x;
             xyeVars.newInput = true;
-            // id(internal_set_point).publish_state(x); // dont think we need to do this since it will update on roundtrip?
+            id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
   
   # this number defines a custom deadband we can use to override the midea unit's internal deadband
   # by seeing if the temp delta between setpoint and actual is greater than the deadband, we can jiggle the setpoint to force the unit to kick on.
