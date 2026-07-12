@@ -417,6 +417,9 @@ select:
       return xyeVars.fanMode;
     set_action: 
       - lambda: |-
+          // FIXME: if the fanMode select chooses a "bad" mode (like 'low' when hvac is 'off'), the select can go stale
+          // we need a way to store the desired setting and verify if the select is not what we think it is, after gettingn the "true" data packet
+          // could we add a conditional to the sensor updater interval above, to make sure that fanMode.current_option() is in line with xyvars.fanBytes and recData? and fanMode the sensor?
           if (xyeVars.fanMode != x)
           {
             xyeVars.fanMode = x;

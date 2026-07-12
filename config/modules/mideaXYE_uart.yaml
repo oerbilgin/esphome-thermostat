@@ -221,6 +221,8 @@ sensor:
           }
           if (theyMatch)
           {
+            // set these helper vars once all the checks have been made that this is actually the current state
+            // namely this is dumping the first packet received after sending new data, as this is a stale state
             xyeVars.fanBytes = xyeVars.recData[REC_FAN];
             xyeVars.opBytes = xyeVars.recData[REC_MODE];
             xyeVars.setTemp = xyeVars.recData[REC_TEMP];
