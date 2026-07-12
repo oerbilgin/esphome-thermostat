@@ -1920,9 +1920,13 @@ lvgl:
             radius: 120
             text_color: !lambda 'return my_colors::main_text_color;'
             on_click:
-              - number.increment:
-                  id: visible_setpoint_value
-                  cycle: true
+              - if:
+                  condition: 
+                    - lambda: 'return (id(opMode).current_option() == "cool" || id(opMode).current_option() == "heat");'
+                  then:
+                    - number.increment:
+                        id: visible_setpoint_value
+                        cycle: true
             widgets:
               - label:
                   id: up_button_icon
@@ -1946,9 +1950,13 @@ lvgl:
             radius: 120
             text_color: !lambda 'return my_colors::main_text_color;'
             on_click:
-              - number.decrement:
-                  id: visible_setpoint_value
-                  cycle: true
+              - if:
+                  condition: 
+                    - lambda: 'return (id(opMode).current_option() == "cool" || id(opMode).current_option() == "heat");'
+                  then:
+                    - number.decrement:
+                        id: visible_setpoint_value
+                        cycle: true
             widgets:
               - label:
                   id: down_button_icon
