@@ -119,69 +119,6 @@ interval:
               "mideaXYE.setpoint_watcher",
               "temporary_setpoint is zero, no need to jiggle."
             );
-  # update sensors
-  - id: update_sensors
-    interval: $sensor_update_interval
-    then:
-      - lambda: |-
-          if (!id(device_initialized)) return;
-
-          // publish sensor states only if recdata is different (i.e. only on new values)
-          // publishing state skips the set_action, but not on_value
-          if (id(t1).state != xyeVars.recData[T1_INDEX]) {
-            ESP_LOGI("mideaXYE.update_sensors", "t1 state has changed from %f to %u", id(t1).state, xyeVars.recData[T1_INDEX]);
-            id(t1).publish_state(xyeVars.recData[T1_INDEX]);
-          }
-
-          if (id(t2a).state != xyeVars.recData[T2A_INDEX]) {
-            ESP_LOGI("mideaXYE.update_sensors", "t2a state has changed from %f to %u", id(t2a).state, xyeVars.recData[T2A_INDEX]);
-            id(t2a).publish_state(xyeVars.recData[T2A_INDEX]);
-          }
-
-          if (id(t2b).state != xyeVars.recData[T2B_INDEX]) {
-            ESP_LOGI("mideaXYE.update_sensors", "t2b state has changed from %f to %u", id(t2b).state, xyeVars.recData[T2B_INDEX]);
-            id(t2b).publish_state(xyeVars.recData[T2B_INDEX]);
-          }
-
-          if (id(t3).state != xyeVars.recData[T3_INDEX]) {
-            ESP_LOGI("mideaXYE.update_sensors", "t3 state has changed from %f to %u", id(t3).state, xyeVars.recData[T3_INDEX]);
-            id(t3).publish_state(xyeVars.recData[T3_INDEX]);
-          }
-
-          if (id(fanBytes).state != xyeVars.recData[REC_FAN]) {
-            ESP_LOGI("mideaXYE.update_sensors", "fanBytes state has changed from %f to %u", id(fanBytes).state, xyeVars.recData[REC_FAN]);
-            id(fanBytes).publish_state(xyeVars.recData[REC_FAN]);
-
-            // update the fanmode and fanstatus text sensors/selects
-            id(fanStatus).update();
-            id(fanMode).update();
-          }
-
-          if (id(modeBytes).state != xyeVars.recData[REC_MODE]) {
-            ESP_LOGI("mideaXYE.update_sensors", "modeBytes state has changed from %f to %u", id(modeBytes).state, xyeVars.recData[REC_MODE]);
-            id(modeBytes).publish_state(xyeVars.recData[REC_MODE]);
-
-            // update the mode select
-            id(opMode).update();
-          }
-
-          if (id(internal_set_point).state != xyeVars.recData[REC_TEMP]) {
-            ESP_LOGI("mideaXYE.update_sensors", "setTemp has changed from %f to %u", id(internal_set_point).state, xyeVars.recData[REC_TEMP]);
-            id(internal_set_point).publish_state(xyeVars.recData[REC_TEMP]);
-            id(internal_setpoint_sensor).publish_state(xyeVars.recData[REC_TEMP]);
-          }
-
-          if (id(e1).state != xyeVars.recData[REC_E1]) {
-            ESP_LOGI("mideaXYE.update_sensors", "e1 has changed from %f to %u", id(e1).state, xyeVars.recData[REC_E1]);
-            id(e1).publish_state(xyeVars.recData[REC_E1]);
-          }
-
-          if (id(e2).state != xyeVars.recData[REC_E2]) {
-            ESP_LOGI("mideaXYE.update_sensors", "e2 has changed from %f to %u", id(e2).state, xyeVars.recData[REC_E2]);
-            id(e2).publish_state(xyeVars.recData[REC_E2]);
-          }
-
-
 
 sensor:
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
@@ -192,9 +129,12 @@ sensor:
   - platform: template
     name: "Inlet Air Temperature"
     unit_of_measurement: "°F"
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
     id: t1
     device_class: temperature
+    lambda: 'return xyeVars.recData[T1_INDEX];'
     on_value: 
       then:
         - if:
@@ -225,7 +165,10 @@ sensor:
 # otherwise it should drift close to ambient or T1
   - platform: template
     name: "Coil A Temperature"
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[T2A_INDEX];'
     id: t2a
     unit_of_measurement: "°F"
     device_class: temperature
@@ -234,26 +177,38 @@ sensor:
 
   - platform: template
     name: "Coil B Temperature"
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[T2B_INDEX];'
     id: t2b
     unit_of_measurement: "°F"
     device_class: temperature
   
   - platform: template
     name: "E1 Status Code"
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[REC_E1];'
     id: e1
   
   - platform: template
     name: "E2 Status Code"
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[REC_E1];'
     id: e2
 
 # I don't think this is truly outside temperature. I think it's exhaust air temperature
 # from the compressor outside which is ambient when it's not running.
   - platform: template
     name: "Outside Air Temperature"
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[T3_INDEX];'
     id: t3
     unit_of_measurement: "°F"
     device_class: temperature
@@ -263,23 +218,53 @@ sensor:
 # internal helper sensor to track the state of the fan bytes
   - platform: template
     name: Fan Bytes Sensor
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[REC_FAN];'
     id: fanBytes
-    internal: True
+    entity_category: "diagnostic"
+    on_value:
+      # update the dependent text sensors/selects
+      # only if we aren't waiting to send some new data
+      - lambda: |-
+          if (!xyeVars.fanBytesSend) {
+            id(fanStatus).update();
+            id(fanMode).update();
+          }
 
 # internal helper sensor to track the state of the opmode bytes
   - platform: template
     name: OpMode Bytes Sensor
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[REC_MODE];'
     id: modeBytes
-    internal: True
+    entity_category: "diagnostic"
+    on_value:
+      - lambda: |-
+          if (!xyeVars.opBytesSend) {
+            id(opMode).update();
+          }
 
 # sensor to see the internal set temp
 # mirrors internal_setpoint number without allowing users to change it directly
   - platform: template
     name: Internal Setpoint
-    update_interval: never # state gets published via the interval above
+    update_interval: 1s
+    filters:
+      - delta: 0.5
+    lambda: 'return xyeVars.recData[REC_TEMP];'
     id: internal_setpoint_sensor
+    on_value:
+      - lambda: |-
+          if (!xyeVars.setTempSend && x != id(internal_set_point).state) {
+            ESP_LOGW("sensor.internal_setpoint_sensor",
+              "Internal setpoint is %f, but the internal setpoint number is %f!",
+              x, id(internal_set_point).state
+            );
+          }
 
 
 text_sensor:
@@ -436,13 +421,24 @@ select:
               xyeVars.fanBytesSend = 0x80;
               ESP_LOGE("mideaXYE.fanMode","Defaulting to auto, invalid fan input: %s",x.str().c_str());
             }
-            ESP_LOGI("mideaXYE.fanMode","selected 0x%x, pressing button to send",
-            xyeVars.fanBytesSend ? static_cast<unsigned int>(*xyeVars.fanBytesSend) : 0xDEADBEEF);
+            ESP_LOGI(
+              "mideaXYE.fanMode","selected 0x%x, pressing button to send",
+              xyeVars.fanBytesSend.value_or(0xDEADBEEF)
+            );
             xyeVars.newInput = true;
-            id(fanMode).publish_state(x); // Be optimistic here, since any real value will be published back on the roundtrip
+            
+            // Be optimistic here, since any real value will be published back on the roundtrip
+            // since fanBytes the sensor will be different from recdata
+            id(fanMode).publish_state(x);
+            id(fanBytes).publish_state(xyeVars.fanBytesSend.value_or(0xDEADBEEF));
           }
     on_value:
       then:
+        - logger.log:
+            format: "fanMode changed to %s"
+            args: x
+            level: DEBUG
+            tag: select.fanMmode
         - script.execute:
             id: update_fan_mode_ui
             fan_mode: !lambda 'return x;'
@@ -451,7 +447,7 @@ select:
   - platform: template
     id: opMode
     name: "Operating Mode"
-    update_interval: never # interval above updates this if the opBytes ever change
+    update_interval: never # the modeBytes sensor updates this on change
     options:
       - 'off'
       - 'auto'
@@ -509,10 +505,15 @@ select:
               xyeVars.opBytesSend = 0x00;
               ESP_LOGE("mideaXYE.opMode","Defaulting to off, invalid mode input: %s",x.str().c_str());
             }
-            ESP_LOGI("mideaXYE.opMode","selected %x for mode, setting send flag",
-            xyeVars.opBytesSend ? static_cast<unsigned int>(*xyeVars.opBytesSend) : 0xDEADBEEF);
+            ESP_LOGI(
+              "mideaXYE.opMode","selected %x for mode, setting send flag",
+              xyeVars.opBytesSend.value_or(0xDEADBEEF)
+            );
             xyeVars.newInput = true;
-            id(opMode).publish_state(x); // be optimistic here since the true value will eventually publish
+
+            // be optimistic here since the true value will eventually publish
+            id(opMode).publish_state(x);
+            id(modeBytes).publish_state(xyeVars.opBytesSend.value_or(0xDEADBEEF));
           }
     on_value:
       then:
