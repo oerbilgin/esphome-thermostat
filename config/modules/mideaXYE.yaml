@@ -215,51 +215,89 @@ sensor:
     on_value:
       - component.update: hvac_status
 
-# internal helper sensor to track the state of the fan bytes
+# internal helper sensor to track the real and intended state of the fan bytes
   - platform: template
     name: Fan Bytes Sensor
-    update_interval: 1s
+    update_interval: never # push-updated from the updater script
     filters:
       - delta: 0.5
-    lambda: 'return xyeVars.recData[REC_FAN];'
+    # use fanBytes instead of recData because fanBytes is set after we dump the stale data after sending
+    lambda: |-
+      // only update the value if we aren't waiting to send any commands
+      // this prevents the on_value from triggering during a send-command from a select component
+      if (!xyeVars.commandSent && !xyeVars.newInput) {
+        return xyeVars.fanBytes;
+      } else return -1; // this represents a "pending confirmation" state
     id: fanBytes
     entity_category: "diagnostic"
     on_value:
       # update the dependent text sensors/selects
       # only if we aren't waiting to send some new data
       - lambda: |-
-          if (!xyeVars.fanBytesSend) {
+          ESP_LOGD("sensor.fanBytes.on_value", "fanBytes value changed to %f, and xyeVars.commandSent is: %s, and xyeVars.newInput is %s", x, xyeVars.commandSent ? "true" : "false", xyeVars.newInput ? "true" : "false");
+          if (!xyeVars.newInput && !xyeVars.commandSent) {
+            if (x == -1) {
+              ESP_LOGE("sensor.fanBytes.on_value", "We are not waiting for a command to be done, but fanBytes sensor is '-1' still!");
+            }
+            // update the UI components anyway to get the error state
+            ESP_LOGD("sensor.fanBytes.on_value", "updating fanStatus text sensor");
             id(fanStatus).update();
+            ESP_LOGD("sensor.fanBytes.on_value", "updating fanMode select");
             id(fanMode).update();
+          } else {
+            ESP_LOGD("sensor.fanBytes.on_value", "We are in the middle of a change, not updating fanStatus and fanMode.");
           }
 
 # internal helper sensor to track the state of the opmode bytes
   - platform: template
     name: OpMode Bytes Sensor
-    update_interval: 1s
+    update_interval: never # push-updated from the updater uart script
     filters:
       - delta: 0.5
-    lambda: 'return xyeVars.recData[REC_MODE];'
-    id: modeBytes
+    # use opBytes instead of recData because it is set after we dump the stale data after sending
+    lambda: |-
+      // only update the value if we aren't waiting to send any commands
+      // this prevents the on_value from triggering during a send-command from a select component
+      if (!xyeVars.commandSent && !xyeVars.newInput) {
+        return xyeVars.opBytes;
+      } else return -1; // this represents a "pending confirmation" state
+    id: opBytes
     entity_category: "diagnostic"
     on_value:
+      # update the dependent text sensors/selects
+      # only if we aren't waiting to send some new data
       - lambda: |-
-          if (!xyeVars.opBytesSend) {
+          ESP_LOGD("sensor.opBytes.on_value", "opBytes value changed to %f, and xyeVars.commandSent is: %s, and xyeVars.newInput is %s", x, xyeVars.commandSent ? "true" : "false", xyeVars.newInput ? "true" : "false");
+          if (!xyeVars.newInput && !xyeVars.commandSent) {
+            if (x == -1) {
+              ESP_LOGE("sensor.opBytes.on_value", "We are not waiting for a command to be done, but opBytes sensor is '-1' still!");
+            }
+            // update the UI components anyway to get the error state
+            ESP_LOGD("sensor.opBytes.on_value", "updating opMode select");
             id(opMode).update();
+          } else {
+            ESP_LOGD("sensor.opBytes.on_value", "We are in the middle of a change, not updating fanStatus and fanMode.");
           }
 
-# sensor to see the internal set temp
-# mirrors internal_setpoint number without allowing users to change it directly
+# sensor to see what the actual internal set temp is
   - platform: template
     name: Internal Setpoint
     update_interval: 1s
     filters:
       - delta: 0.5
-    lambda: 'return xyeVars.recData[REC_TEMP];'
+    # use setTemp instead of recData because it is set after we dump the stale data after sending
+    lambda: |-
+      // only update the value if we aren't waiting to send any commands
+      // this prevents the on_value from triggering during a send-command from a select component
+      if (!xyeVars.commandSent && !xyeVars.newInput) {
+        return xyeVars.setTemp;
+      } else return -1; // this represents a "pending confirmation" state
     id: internal_setpoint_sensor
     on_value:
       - lambda: |-
-          if (!xyeVars.setTempSend && x != id(internal_set_point).state) {
+          // if we arent waiting for a command to send, and this value is different than the number component
+          // this is a potential problem.
+          if (!xyeVars.commandSent && !xyeVars.newInput && x != id(internal_set_point).state) {
             ESP_LOGW("sensor.internal_setpoint_sensor",
               "Internal setpoint is %f, but the internal setpoint number is %f!",
               x, id(internal_set_point).state
@@ -326,7 +364,7 @@ text_sensor:
 # this sensor tells us what the current fan speed is
   - platform: template
     name: Fan Status
-    update_interval: never # gets updated by changes to fanBytes in the interval above
+    update_interval: never # gets updated by changes to fanBytes sensor
     id: fanStatus
     lambda: |-
       // update the fan status
@@ -337,29 +375,30 @@ text_sensor:
       std::vector<uint8_t> high_status = {0x01, 0x81};
 
       // cast fanBytes back to uint8
-      uint8_t fanBytes = xyeVars.recData[REC_FAN];
+      // use fanBytes sensor as this holds intended values on change, and eventually gets updated by recdata if incorrect
+      uint8_t fanBytesVal = static_cast<uint8_t>(id(fanBytes).state);
 
       // assert fanbytes == xyeVars.fanBytes
-      if (fanBytes != xyeVars.fanBytes) {
-        ESP_LOGE("mideaXYE.fanStatus", "xyeVars.recData[REC_FAN] (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytes, xyeVars.fanBytes);
+      if (fanBytesVal != xyeVars.fanBytes) {
+        ESP_LOGE("mideaXYE.fanStatus", "fanBytesVal (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytesVal, xyeVars.fanBytes);
         return "err";
       } else {
         // set the fanStatus
         // std::find returns numbers.end() if the value isn't found
-        if (std::find(off_status.begin(), off_status.end(), fanBytes) != off_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means OFF", fanBytes);
+        if (std::find(off_status.begin(), off_status.end(), fanBytesVal) != off_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means OFF", fanBytesVal);
             return "off";
-        } else if (std::find(low_status.begin(), low_status.end(), fanBytes) != low_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means LOW", fanBytes);
+        } else if (std::find(low_status.begin(), low_status.end(), fanBytesVal) != low_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means LOW", fanBytesVal);
              return "low";
-        } else if (std::find(med_status.begin(), med_status.end(), fanBytes) != med_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means MED", fanBytes);
+        } else if (std::find(med_status.begin(), med_status.end(), fanBytesVal) != med_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means MED", fanBytesVal);
             return "med";
-        } else if (std::find(high_status.begin(), high_status.end(), fanBytes) != high_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means HIGH", fanBytes);
+        } else if (std::find(high_status.begin(), high_status.end(), fanBytesVal) != high_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means HIGH", fanBytesVal);
             return "high";
         } else {
-          ESP_LOGE("mideaXYE.fanStatus", "fanBytes is 0x%02x, and could not determine what this means!", fanBytes);
+          ESP_LOGE("mideaXYE.fanStatus", "fanBytes is 0x%02x, and could not determine what this means!", fanBytesVal);
           return "err";
         }
       }
@@ -377,34 +416,36 @@ select:
       - 'medium'
       - 'high'
       - 'auto'
-      
     lambda: |-
+      ESP_LOGD("select.fanMode", "Entering fanMode lambda...");
       std::vector<uint8_t> auto_modes = {0x80, 0x81, 0x82, 0x84};
 
-      if (xyeVars.fanBytes == 0x01) {
-        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to high",xyeVars.fanBytes);
+      // cast fanBytes back to uint8
+      // use fanBytes sensor as this holds intended values on change, and eventually gets updated by recdata if incorrect
+      uint8_t fanBytesVal = static_cast<uint8_t>(id(fanBytes).state);
+
+      if (fanBytesVal == 0x01) {
+        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to high",fanBytesVal);
         xyeVars.fanMode = "high";
-      } else if (xyeVars.fanBytes == 0x02) {
-        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to medium",xyeVars.fanBytes);
+      } else if (fanBytesVal == 0x02) {
+        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to medium",fanBytesVal);
         xyeVars.fanMode = "medium";
-      } else if (xyeVars.fanBytes == 0x04) {
-        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to low",xyeVars.fanBytes);
+      } else if (fanBytesVal == 0x04) {
+        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to low",fanBytesVal);
         xyeVars.fanMode = "low";
-      } else if (std::find(auto_modes.begin(), auto_modes.end(), xyeVars.fanBytes) != auto_modes.end()) {
-        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, xyeVars.fanMode set to auto",xyeVars.fanBytes);
+      } else if (std::find(auto_modes.begin(), auto_modes.end(), fanBytesVal) != auto_modes.end()) {
+        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to auto",fanBytes);
         xyeVars.fanMode = "auto";
-      } else if (xyeVars.fanBytes == 0x00) {
-        ESP_LOGD("mideaXYE.fanMode","xyeVars.fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",xyeVars.fanBytes, id(fanMode).current_option().c_str());
+      } else if (fanBytesVal == 0x00) {
+        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",fanBytesVal, id(fanMode).current_option().c_str());
       } else {
-        ESP_LOGE("mideaXYE.fanMode","xyeVars.fanMode defaulting to auto, invalid mode input: %02X",xyeVars.fanBytes);
+        ESP_LOGE("mideaXYE.fanMode","xyeVars.fanMode defaulting to auto, invalid mode input: %02X",fanBytesVal);
         xyeVars.fanMode = "auto";
       }
       return xyeVars.fanMode;
     set_action: 
       - lambda: |-
-          // FIXME: if the fanMode select chooses a "bad" mode (like 'low' when hvac is 'off'), the select can go stale
-          // we need a way to store the desired setting and verify if the select is not what we think it is, after gettingn the "true" data packet
-          // could we add a conditional to the sensor updater interval above, to make sure that fanMode.current_option() is in line with xyvars.fanBytes and recData? and fanMode the sensor?
+          ESP_LOGD("select.fanMode", "Entering fanMode set_action, fanmode changed to %s", x.c_str());
           if (xyeVars.fanMode != x)
           {
             xyeVars.fanMode = x;
@@ -430,12 +471,12 @@ select:
             // Be optimistic here, since any real value will be published back on the roundtrip
             // since fanBytes the sensor will be different from recdata
             id(fanMode).publish_state(x);
-            id(fanBytes).publish_state(xyeVars.fanBytesSend.value_or(0xDEADBEEF));
+            id(fanBytes).update(); // sets this to the temporary value
           }
     on_value:
       then:
         - logger.log:
-            format: "fanMode changed to %s"
+            format: "Entering fanMode on_value, fanMode changed to %s"
             args: x
             level: DEBUG
             tag: select.fanMmode
@@ -447,7 +488,7 @@ select:
   - platform: template
     id: opMode
     name: "Operating Mode"
-    update_interval: never # the modeBytes sensor updates this on change
+    update_interval: never # the opBytes sensor updates this on change
     options:
       - 'off'
       - 'auto'
@@ -513,7 +554,7 @@ select:
 
             // be optimistic here since the true value will eventually publish
             id(opMode).publish_state(x);
-            id(modeBytes).publish_state(xyeVars.opBytesSend.value_or(0xDEADBEEF));
+            id(opBytes).update(); // sets this to the temporary value
           }
     on_value:
       then:

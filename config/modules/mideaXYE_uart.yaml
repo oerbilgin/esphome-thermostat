@@ -34,6 +34,7 @@ script:
         if (!xyeVars.waitingForResponse)
         {
           uint8_t resp;
+          // FIXME: these logs are logging the wrong bytes
           ESP_LOGD(
             "mideaXYE_UART.send_command",
             "send_command starting: opBytes=0x%02X fanBytes=0x%02X setTemp=0x%02X newInput=%s commandSent=%s waitingForResponse=%s",
@@ -224,7 +225,11 @@ sensor:
             // set these helper vars once all the checks have been made that this is actually the current state
             // namely this is dumping the first packet received after sending new data, as this is a stale state
             xyeVars.fanBytes = xyeVars.recData[REC_FAN];
+            id(fanBytes).publish_state(xyeVars.fanBytes); // TODO: do we even need xyeVars.fanBytes at this point?
+
             xyeVars.opBytes = xyeVars.recData[REC_MODE];
+            id(opBytes).publish_state(xyeVars.opBytes); // TODO: do we even need xyeVars.opBytes at this point?
+
             xyeVars.setTemp = xyeVars.recData[REC_TEMP];
             ESP_LOGD("mideaXYE_UART.updater","Got these updated values: op 0x%02X fan 0x%02X temp %02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
             
