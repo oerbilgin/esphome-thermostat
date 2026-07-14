@@ -56,10 +56,19 @@ number:
     max_value: 255
     update_interval: $sensor_update_interval
     lambda: |-
-      return xyeVars.fanBytes;
+      return id(fanBytes).state;
     set_action:
       - lambda: |-
+          id(fanBytes).publish_state(x);
           xyeVars.fanBytes = x;
+          xyeVars.recData[REC_FAN] = x;
+          xyeVars.newInput = false;
+    on_value:
+      - lambda: |-
+          id(fanBytes).publish_state(x);
+          xyeVars.fanBytes = x;
+          xyeVars.recData[REC_FAN] = x;
+          xyeVars.newInput = false;
 
   - platform: template
     name: "Simulated xyeVars.fanBytesSend"
@@ -71,16 +80,20 @@ number:
     update_interval: $sensor_update_interval
     lambda: |-
       return xyeVars.fanBytesSend;
-    set_action:
-      - lambda: |-
-          xyeVars.fanBytesSend = x;
-          xyeVars.fanBytes = x;
-          xyeVars.recData[REC_FAN] = x;
     on_value:
       - lambda: |-
           xyeVars.fanBytesSend = x;
           xyeVars.fanBytes = x;
           xyeVars.recData[REC_FAN] = x;
+          id(fanBytes).publish_state(x);
+          xyeVars.newInput = false;
+    set_action:
+      - lambda: |-
+          xyeVars.fanBytesSend = x;
+          xyeVars.fanBytes = x;
+          xyeVars.recData[REC_FAN] = x;
+          id(fanBytes).publish_state(x);
+          xyeVars.newInput = false;
 
   - platform: template
     name: "Simulated xyeVars.opBytes"
@@ -91,11 +104,19 @@ number:
     max_value: 255
     update_interval: $sensor_update_interval
     lambda: |-
-      return xyeVars.opBytes;
+      return id(opBytes).state;
+    on_value:
+      - lambda: |-
+          xyeVars.opBytes = x;
+          xyeVars.recData[REC_MODE] = x;
+          id(opBytes).publish_state(x);
+          xyeVars.newInput = false;
     set_action:
       - lambda: |-
           xyeVars.opBytes = x;
           xyeVars.recData[REC_MODE] = x;
+          id(opBytes).publish_state(x);
+          xyeVars.newInput = false;
 
   - platform: template
     name: "Simulated xyeVars.opBytesSend"
@@ -107,16 +128,20 @@ number:
     update_interval: $sensor_update_interval
     lambda: |-
       return xyeVars.opBytesSend;
-    set_action:
-      - lambda: |-
-          xyeVars.opBytesSend = x;
-          xyeVars.opBytes = x;
-          xyeVars.recData[REC_MODE] = x;
     on_value:
       - lambda: |-
           xyeVars.opBytesSend = x;
           xyeVars.opBytes = x;
           xyeVars.recData[REC_MODE] = x;
+          id(opBytes).publish_state(x);
+          xyeVars.newInput = false;
+    set_action:
+      - lambda: |-
+          xyeVars.opBytesSend = x;
+          xyeVars.opBytes = x;
+          xyeVars.recData[REC_MODE] = x;
+          id(opBytes).publish_state(x);
+          xyeVars.newInput = false;
 
   - platform: template
     name: "Simulated xyeVars.setTemp"
@@ -129,12 +154,16 @@ number:
     update_interval: $sensor_update_interval
     lambda: |-
       return xyeVars.setTemp;
-    set_action:
-      # keep it synced with setTemp if our simulated value changes
+    on_value:
       - lambda: |-
           xyeVars.setTemp = x;
-    on_value:
-      - lambda: 'xyeVars.recData[REC_TEMP] = x;'
+          xyeVars.recData[REC_TEMP] = x;
+          xyeVars.newInput = false;
+    set_action:
+      - lambda: |-
+          xyeVars.setTemp = x;
+          xyeVars.recData[REC_TEMP] = x;
+          xyeVars.newInput = false;
   
   - platform: template
     name: "Simulated xyeVars.setTempSend"
@@ -147,17 +176,18 @@ number:
     update_interval: $sensor_update_interval
     lambda: |-
       return xyeVars.setTempSend;
-    set_action:
-      # keep it synced with setTemp if our simulated value changes
-      - lambda: |-
-          xyeVars.setTemp = x;
-          xyeVars.setTempSend = x;
-          xyeVars.recData[REC_TEMP] = x;
     on_value:
       - lambda: |-
           xyeVars.setTemp = x;
           xyeVars.setTempSend = x;
           xyeVars.recData[REC_TEMP] = x;
+          xyeVars.newInput = false;
+    set_action:
+      - lambda: |-
+          xyeVars.setTemp = x;
+          xyeVars.setTempSend = x;
+          xyeVars.recData[REC_TEMP] = x;
+          xyeVars.newInput = false;
 
   - platform: template
     name: "Simulated T1 temp"
@@ -176,42 +206,41 @@ number:
       - lambda: |-
           xyeVars.recData[T1_INDEX] = x;
           ESP_LOGD("simulator_config.t1_sim", "xyeVars.recData[%i] is now %u", T1_INDEX, xyeVars.recData[T1_INDEX]);
-  
-  - platform: template
-    name: "Simulated fanmode"
-    id: fan_sim
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 255
-    optimistic: true
-    set_action:
-      - logger.log:
-          format: "Simulated fanmode set to %f, updating xyeVars.recData"
-          args: x
-          level: DEBUG
-          tag: simulator_config.fan_sim
-      - lambda: |-
-          xyeVars.recData[REC_FAN] = x;
-          ESP_LOGD("simulator_config.fan_sim", "xyeVars.recData[%i] is now 0x%02x", REC_FAN, xyeVars.recData[REC_FAN]);
-          xyeVars.fanBytes = x;
-          ESP_LOGD("simulator_config.fan_sim", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_FAN]);
-  - platform: template
-    name: "Simulated opmode"
-    id: opmode_sim
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 255
-    optimistic: true
-    set_action:
-      - logger.log:
-          format: "Simulated opmode set to %f, updating xyeVars.recData"
-          args: x
-          level: DEBUG
-          tag: simulator_config.opmode_sim
-      - lambda: |-
-          xyeVars.recData[REC_MODE] = x;
-          ESP_LOGD("simulator_config.opmode_sim", "xyeVars.recData[%i] is now 0x%02x", REC_MODE, xyeVars.recData[REC_MODE]);
-          xyeVars.opBytes = x;
-          ESP_LOGD("simulator_config.opmode_sim", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_MODE]);
+  # - platform: template
+  #   name: "Simulated fanmode"
+  #   id: fan_sim
+  #   step: 1
+  #   mode: box
+  #   min_value: 0
+  #   max_value: 255
+  #   optimistic: true
+  #   set_action:
+  #     - logger.log:
+  #         format: "Simulated fanmode set to %f, updating xyeVars.recData"
+  #         args: x
+  #         level: DEBUG
+  #         tag: simulator_config.fan_sim
+  #     - lambda: |-
+  #         xyeVars.recData[REC_FAN] = x;
+  #         ESP_LOGD("simulator_config.fan_sim", "xyeVars.recData[%i] is now 0x%02x", REC_FAN, xyeVars.recData[REC_FAN]);
+  #         xyeVars.fanBytes = x;
+  #         ESP_LOGD("simulator_config.fan_sim", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_FAN]);
+  # - platform: template
+  #   name: "Simulated opmode"
+  #   id: opmode_sim
+  #   step: 1
+  #   mode: box
+  #   min_value: 0
+  #   max_value: 255
+  #   optimistic: true
+  #   set_action:
+  #     - logger.log:
+  #         format: "Simulated opmode set to %f, updating xyeVars.recData"
+  #         args: x
+  #         level: DEBUG
+  #         tag: simulator_config.opmode_sim
+  #     - lambda: |-
+  #         xyeVars.recData[REC_MODE] = x;
+  #         ESP_LOGD("simulator_config.opmode_sim", "xyeVars.recData[%i] is now 0x%02x", REC_MODE, xyeVars.recData[REC_MODE]);
+  #         xyeVars.opBytes = x;
+  #         ESP_LOGD("simulator_config.opmode_sim", "xyeVars.fanBytes is now 0x%02x", xyeVars.recData[REC_MODE]);
