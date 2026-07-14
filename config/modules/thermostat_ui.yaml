@@ -646,12 +646,17 @@ sensor:
     entity_id: sensor.average_house_temperature
     device_class: temperature
     unit_of_measurement: "°F"
+    filter:
+      delta: 0.1
     on_value:
       then:
         - script.execute: 
             id: update_current_temp_arcs
             temperature_to_show: !lambda 'return x;'
             temperature_label: "Inside"
+        - script.execute:
+            id: update_setpoints
+            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
   
   # next rain probability
   - platform: homeassistant

@@ -602,7 +602,7 @@ number:
     restore_value: True
     optimistic: True
 
-# FIXME: weird stuff happens when i activate this
+# FIXME: weird stuff happens when i activate this. do i even need a climate component at all?
 # climate:
 #   - platform: thermostat
 #     name: "Midea Thermostat"
