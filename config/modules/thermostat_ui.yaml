@@ -604,9 +604,14 @@ sensor:
     internal: true
     on_raw_value:
       then:
+        - logger.log:
+            format: "aqi_sensor is %f"
+            args: x
+            tag: "sensor.aqi_sensor"
+            level: DEBUG
         - if:
             condition:
-              lambda: 'return id(aqi_sensor).has_state();'
+              lambda: 'return !std::isnan(x);'
             then:
               - lvgl.label.update:
                   id: aqi_number
@@ -848,11 +853,12 @@ text_sensor:
     id: next_rain_day_sensor
     entity_id: sensor.next_rain_forecast
     internal: true
-    on_raw_value: 
+    on_value: 
       then:
         if:
           condition:
-            lambda: 'return id(next_rain_day_sensor).has_state();'
+            lambda: |-
+              return x != "unavailable" && x != "unknown" && !x.empty();
           then:
             if:
               condition:
@@ -901,7 +907,8 @@ text_sensor:
       then:
         if:
           condition:
-            lambda: 'return id(conditions_today).has_state();'
+            lambda: |-
+              return x != "unavailable" && x != "unknown" && !x.empty();
           then:
             script.execute: update_condition_icon
           else:
