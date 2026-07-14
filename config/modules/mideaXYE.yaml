@@ -37,7 +37,10 @@ interval:
           std::string hvac_state = id(hvac_status).state;
           
           // exit fast if this check is unnecessary
-          if ((hvac_mode == "cool" || hvac_mode == "heat" || hvac_mode == "auto") && (hvac_state == "Idle")) {
+          if (
+              (hvac_mode == "cool" || hvac_mode == "heat" || hvac_mode == "auto")
+              && (hvac_state == "Idle" || hvac_state == "Diffusing")
+            ) {
             ESP_LOGD(
               "mideaXYE.setpoint_watcher",
               "hvac_mode is %s and hvac_state is %s, checking the setpoint against the deadband...",
@@ -69,7 +72,7 @@ interval:
           if (temp_delta < -deadband_value && hvac_mode == "heat") {
             // it is colder than we want yet the hvac isn't heating; increase internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint + deadband_value;
-            ESP_LOGD(
+            ESP_LOGI(
               "mideaXYE.setpoint_watcher",
               "hvac state of %s and temp_delta of %f, need to trigger heating, so temporarily set the internal setpoint to %f",
               hvac_state.c_str(), temp_delta, temporary_setpoint
@@ -77,7 +80,7 @@ interval:
           } else if (temp_delta > deadband_value && hvac_mode == "cool") {
             // it is hotter than we want yet the hvac isn't cooling; decrease internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint - deadband_value;
-            ESP_LOGD(
+            ESP_LOGI(
               "mideaXYE.setpoint_watcher",
               "hvac state of %s and temp_delta of %f, need to trigger cooling, so temporarily set the internal setpoint to %f",
               hvac_state.c_str(), temp_delta, temporary_setpoint
@@ -204,7 +207,7 @@ sensor:
 # I don't think this is truly outside temperature. I think it's exhaust air temperature
 # from the compressor outside which is ambient when it's not running.
   - platform: template
-    name: "Outside Air Temperature"
+    name: "Compressor Outlet Temperature"
     update_interval: 1s
     filters:
       - delta: 0.5
