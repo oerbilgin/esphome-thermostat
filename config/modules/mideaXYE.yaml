@@ -34,7 +34,7 @@ interval:
           if (!id(device_initialized)) return;
 
           std::string hvac_mode = id(opMode).current_option();
-          std::string hvac_state = id(hvac_status).state;
+          std::string hvac_state = id(hvac_status).current_option();
           
           // exit fast if this check is unnecessary
           if (
@@ -310,107 +310,6 @@ sensor:
           }
 
 
-text_sensor:
-# logic to determine what the hvac status is: cooling/heating/diffusing
-  - platform: template
-    name: HVAC Status
-    update_interval: never # gets updated by any changes to t1, t2a, t3, fanStatus
-    id: hvac_status
-    lambda: |-
-      // this script looks at the fan modes and coil temps to determine if the unit 
-      // is actively heating, cooling, or diffusing
-      // if the t2a temp is > t1 by at least 10 degrees, then we are heating
-      // if t2a temp is < t1 by at least 10 degrees, then we are cooling
-      // if t2a temp is close to t1 temp, and fan status is not zero then we are diffusing
-      // get the variables
-      uint8_t t1_temp = xyeVars.recData[T1_INDEX];
-      uint8_t t2a_temp = xyeVars.recData[T2A_INDEX];
-      std::string fan_status = id(fanStatus).state;
-      std::string hvac_mode = id(opMode).current_option();
-      bool fan_is_on = fan_status != "off";
-
-      std::vector<std::string> cooling_modes = {"cool", "dry", "auto"};
-      std::vector<std::string> heating_modes = {"heat", "auto"};
-
-      int temp_threashold = 10;
-      std::string result;
-
-      if ((t2a_temp - t1_temp) > temp_threashold) {
-        result = "Heating";
-      } else if ((t2a_temp - t1_temp) < -temp_threashold) {
-        result = "Cooling";
-      } else if (fan_is_on) {
-        result = "Diffusing";
-      } else result = "Idle";
-
-      // check that the status and mode match up
-      if (result == "Heating" && (std::find(heating_modes.begin(), heating_modes.end(), hvac_mode) == heating_modes.end())) {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
-        result = "Diffusing";
-      } else if (result == "Cooling" && (std::find(cooling_modes.begin(), cooling_modes.end(), hvac_mode) == cooling_modes.end())) {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
-        result = "Diffusing";
-      } else if (result == "Diffusing" && hvac_mode == "off") {
-        ESP_LOGW("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Idle.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
-        result = "Idle";
-      }
-      
-      // final check if the fan is actually on
-      if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
-        result = "err";
-      }
-
-      ESP_LOGD("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
-      return result;
-    on_value:
-      - script.execute: update_hvac_status_ui
-
-# this sensor tells us what the current fan speed is
-  - platform: template
-    name: Fan Status
-    update_interval: never # gets updated by changes to fanBytes sensor
-    id: fanStatus
-    lambda: |-
-      // update the fan status
-      // define the options
-      std::vector<uint8_t> off_status = {0x00, 0x80};
-      std::vector<uint8_t> low_status = {0x04, 0x84};
-      std::vector<uint8_t> med_status = {0x02, 0x82};
-      std::vector<uint8_t> high_status = {0x01, 0x81};
-
-      // cast fanBytes back to uint8
-      // use fanBytes sensor as this holds intended values on change, and eventually gets updated by recdata if incorrect
-      uint8_t fanBytesVal = static_cast<uint8_t>(id(fanBytes).state);
-
-      // assert fanbytes == xyeVars.fanBytes
-      if (fanBytesVal != xyeVars.fanBytes) {
-        ESP_LOGE("mideaXYE.fanStatus", "fanBytesVal (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytesVal, xyeVars.fanBytes);
-        return "err";
-      } else {
-        // set the fanStatus
-        // std::find returns numbers.end() if the value isn't found
-        if (std::find(off_status.begin(), off_status.end(), fanBytesVal) != off_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means OFF", fanBytesVal);
-            return "off";
-        } else if (std::find(low_status.begin(), low_status.end(), fanBytesVal) != low_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means LOW", fanBytesVal);
-             return "low";
-        } else if (std::find(med_status.begin(), med_status.end(), fanBytesVal) != med_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means MED", fanBytesVal);
-            return "med";
-        } else if (std::find(high_status.begin(), high_status.end(), fanBytesVal) != high_status.end()) {
-            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means HIGH", fanBytesVal);
-            return "high";
-        } else {
-          ESP_LOGE("mideaXYE.fanStatus", "fanBytes is 0x%02x, and could not determine what this means!", fanBytesVal);
-          return "err";
-        }
-      }
-    on_value:
-      - component.update: hvac_status
-      
-
 select:
   - platform: template
     name: "Fan Mode"
@@ -439,7 +338,7 @@ select:
         ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to low",fanBytesVal);
         xyeVars.fanMode = "low";
       } else if (std::find(auto_modes.begin(), auto_modes.end(), fanBytesVal) != auto_modes.end()) {
-        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to auto",fanBytes);
+        ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, xyeVars.fanMode set to auto",fanBytesVal);
         xyeVars.fanMode = "auto";
       } else if (fanBytesVal == 0x00) {
         ESP_LOGD("mideaXYE.fanMode","fanBytes is 0x%02X, not changing xyeVars.fanMode. it is still %s",fanBytesVal, id(fanMode).current_option().c_str());
@@ -482,7 +381,7 @@ select:
       then:
         - logger.log:
             format: "Entering fanMode on_value, fanMode changed to %s"
-            args: x
+            args: x.c_str()
             level: DEBUG
             tag: select.fanMmode
         - script.execute:
@@ -567,6 +466,130 @@ select:
             id: update_hvac_mode_ui
             mode: !lambda 'return x;'
         - component.update: hvac_status
+  
+  # logic to determine what the hvac status is: cooling/heating/diffusing
+  # this acts as a sensor (no actions on set_action), but is a select so we can get dropdowns in HASS
+  - platform: template
+    name: HVAC Status
+    update_interval: never # gets updated by any changes to t1, t2a, t3, fanStatus
+    id: hvac_status
+    options:
+      - "Idle"
+      - "Heating"
+      - "Cooling"
+      - "Diffusing"
+      - "Error"
+    lambda: |-
+      // this script looks at the fan modes and coil temps to determine if the unit 
+      // is actively heating, cooling, or diffusing
+      // if the t2a temp is > t1 by at least 10 degrees, then we are heating
+      // if t2a temp is < t1 by at least 10 degrees, then we are cooling
+      // if t2a temp is close to t1 temp, and fan status is not zero then we are diffusing
+      // get the variables
+      uint8_t t1_temp = xyeVars.recData[T1_INDEX];
+      uint8_t t2a_temp = xyeVars.recData[T2A_INDEX];
+      std::string fan_status = id(fanStatus).current_option();
+      std::string hvac_mode = id(opMode).current_option();
+      bool fan_is_on = fan_status != "Off";
+
+      std::vector<std::string> cooling_modes = {"cool", "dry", "auto"};
+      std::vector<std::string> heating_modes = {"heat", "auto"};
+
+      int temp_threashold = 10;
+      std::string result;
+
+      if ((t2a_temp - t1_temp) > temp_threashold) {
+        result = "Heating";
+      } else if ((t2a_temp - t1_temp) < -temp_threashold) {
+        result = "Cooling";
+      } else if (fan_is_on) {
+        result = "Diffusing";
+      } else result = "Idle";
+
+      // check that the status and mode match up
+      if (result == "Heating" && (std::find(heating_modes.begin(), heating_modes.end(), hvac_mode) == heating_modes.end())) {
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
+        result = "Diffusing";
+      } else if (result == "Cooling" && (std::find(cooling_modes.begin(), cooling_modes.end(), hvac_mode) == cooling_modes.end())) {
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Diffusing.", t1_temp, t2a_temp, result.c_str(), hvac_mode.c_str());
+        result = "Diffusing";
+      } else if (result == "Diffusing" && hvac_mode == "off") {
+        ESP_LOGW("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, which means the hvac status should be %s, but the hvac mode is %s which does not make sense! Setting hvac_status to Idle.", t1_temp, t2a_temp, fan_status.c_str(), result.c_str(), hvac_mode.c_str());
+        result = "Idle";
+      }
+      
+      // final check if the fan is actually on
+      if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
+        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
+        result = "Error";
+      }
+
+      ESP_LOGD("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
+      return result;
+    set_action:
+      - logger.log:
+          format: "hvac_status select set, but nothing will happen"
+          tag: "select.hvac_status"
+          level: "WARN"
+    on_value:
+      - script.execute: update_hvac_status_ui
+
+# this sensor tells us what the current fan speed is
+# its actually a select so that we can treat it as an enum in HASS
+  - platform: template
+    name: Fan Status
+    update_interval: never # gets updated by changes to fanBytes sensor
+    id: fanStatus
+    options:
+      - "Off"
+      - "Low"
+      - "Medium"
+      - "High"
+      - "Error"
+    lambda: |-
+      // update the fan status
+      // define the options
+      std::vector<uint8_t> off_status = {0x00, 0x80};
+      std::vector<uint8_t> low_status = {0x04, 0x84};
+      std::vector<uint8_t> med_status = {0x02, 0x82};
+      std::vector<uint8_t> high_status = {0x01, 0x81};
+
+      // cast fanBytes back to uint8
+      // use fanBytes sensor as this holds intended values on change, and eventually gets updated by recdata if incorrect
+      uint8_t fanBytesVal = static_cast<uint8_t>(id(fanBytes).state);
+
+      // assert fanbytes == xyeVars.fanBytes
+      if (fanBytesVal != xyeVars.fanBytes) {
+        ESP_LOGE("mideaXYE.fanStatus", "fanBytesVal (0x%02x) != xyeVars.fanBytes (0x%02x)!", fanBytesVal, xyeVars.fanBytes);
+        return "Error";
+      } else {
+        // set the fanStatus
+        // std::find returns numbers.end() if the value isn't found
+        if (std::find(off_status.begin(), off_status.end(), fanBytesVal) != off_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means OFF", fanBytesVal);
+            return "Off";
+        } else if (std::find(low_status.begin(), low_status.end(), fanBytesVal) != low_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means LOW", fanBytesVal);
+             return "Low";
+        } else if (std::find(med_status.begin(), med_status.end(), fanBytesVal) != med_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means MED", fanBytesVal);
+            return "Medium";
+        } else if (std::find(high_status.begin(), high_status.end(), fanBytesVal) != high_status.end()) {
+            ESP_LOGD("mideaXYE.fanStatus", "fanBytes is 0x%02x and means HIGH", fanBytesVal);
+            return "High";
+        } else {
+          ESP_LOGE("mideaXYE.fanStatus", "fanBytes is 0x%02x, and could not determine what this means!", fanBytesVal);
+          return "Error";
+        }
+      }
+    on_value:
+      - component.update: hvac_status
+    set_action:
+      - logger.log:
+          format: "fanStatus select set, but nothing will happen"
+          tag: "select.fanStatus"
+          level: "WARN"
+    
 
 # this is the internal setpoint for the hvac controller
 # we will adjust this one as needed to get the behavior that we want

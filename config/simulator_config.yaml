@@ -45,6 +45,9 @@ touchscreen:
     id: my_touch
     display: my_display
 
+substitutions:
+  simulated_number_update_interval: 1s
+
 number: 
 # these are for simulating new data from the midea unit
   - platform: template
@@ -54,7 +57,7 @@ number:
     mode: box
     min_value: 0
     max_value: 255
-    update_interval: $sensor_update_interval
+    update_interval: $simulated_number_update_interval
     lambda: |-
       return id(fanBytes).state;
     set_action:
@@ -77,7 +80,7 @@ number:
     mode: box
     min_value: 0
     max_value: 255
-    update_interval: $sensor_update_interval
+    update_interval: $simulated_number_update_interval
     lambda: |-
       return xyeVars.fanBytesSend;
     on_value:
@@ -102,7 +105,7 @@ number:
     mode: box
     min_value: 0
     max_value: 255
-    update_interval: $sensor_update_interval
+    update_interval: $simulated_number_update_interval
     lambda: |-
       return id(opBytes).state;
     on_value:
@@ -125,7 +128,7 @@ number:
     mode: box
     min_value: 0
     max_value: 255
-    update_interval: $sensor_update_interval
+    update_interval: $simulated_number_update_interval
     lambda: |-
       return xyeVars.opBytesSend;
     on_value:
@@ -151,7 +154,7 @@ number:
     min_value: 0
     max_value: 100
     # keep it synced with setTemp if that changes
-    update_interval: $sensor_update_interval
+    update_interval: $simulated_number_update_interval
     lambda: |-
       return xyeVars.setTemp;
     on_value:
@@ -173,7 +176,7 @@ number:
     min_value: 0
     max_value: 100
     # keep it synced with setTemp if that changes
-    update_interval: $sensor_update_interval
+    update_interval: $simulated_number_update_interval
     lambda: |-
       return xyeVars.setTempSend;
     on_value:

@@ -538,7 +538,7 @@ script:
 - id: update_hvac_status_ui
   then:
     lambda: |-
-      std::string hvac_status_str = id(hvac_status).state;
+      std::string hvac_status_str = id(hvac_status).current_option();
 
       ESP_LOGD("thermostat_ui.update_hvac_status_ui", "Executing update_hvac_status_ui script, hvac_status_str is '%s'", hvac_status_str.c_str());
       
