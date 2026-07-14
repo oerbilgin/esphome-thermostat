@@ -286,6 +286,8 @@ sensor:
   - platform: template
     name: Internal Setpoint
     update_interval: 1s
+    device_class: temperature
+    unit_of_measurement: "°F"
     filters:
       - delta: 0.5
     # use setTemp instead of recData because it is set after we dump the stale data after sending
@@ -294,7 +296,7 @@ sensor:
       // this prevents the on_value from triggering during a send-command from a select component
       if (!xyeVars.commandSent && !xyeVars.newInput) {
         return xyeVars.setTemp;
-      } else return -1; // this represents a "pending confirmation" state
+      } else return {}; // unchanged if we're in the middle of a send command
     id: internal_setpoint_sensor
     on_value:
       - lambda: |-
