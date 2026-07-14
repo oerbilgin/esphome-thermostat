@@ -646,7 +646,7 @@ sensor:
     entity_id: sensor.average_house_temperature
     device_class: temperature
     unit_of_measurement: "°F"
-    filter:
+    filters:
       delta: 0.1
     on_value:
       then:
