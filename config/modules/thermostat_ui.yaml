@@ -1909,6 +1909,15 @@ lvgl:
                   radius: 12
                   text_color: !lambda 'return my_colors::main_text_color;'
                   text_font: montserrat_16
+                  text_align: CENTER
+                  dropdown_list:
+                    bg_color: !lambda 'return my_colors::main_background_color;'
+                    text_color: !lambda 'return my_colors::main_text_color;'
+                    text_align: CENTER
+                    selected:
+                      checked:
+                        bg_color: !lambda 'return my_colors::text_light_gray;'
+                        text_color: !lambda 'return my_colors::main_text_color;'
 
               - label:
                   id: current_temp_label
@@ -1956,7 +1965,16 @@ lvgl:
                   radius: 12
                   text_color: !lambda 'return my_colors::main_text_color;'
                   text_font: montserrat_18
+                  text_align: CENTER
                   pad_left: 40
+                  dropdown_list:
+                    bg_color: !lambda 'return my_colors::button_bg_color;'
+                    text_color: !lambda 'return my_colors::main_text_color;'
+                    selected:
+                      checked:
+                        bg_color: !lambda 'return my_colors::text_light_gray;'
+                        text_color: !lambda 'return my_colors::main_text_color;'
+                        text_align: CENTER
                   on_value:
                     - if:
                         condition:
