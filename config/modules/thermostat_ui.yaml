@@ -16,11 +16,20 @@ esphome:
       # Wait until the temperature sensors have actual valid readings
       - wait_until:
           lambda: |-
-            return !std::isnan(id(t1).state) && !std::isnan(id(average_house_temperature).state);
+            return (
+              !std::isnan(id(t1).state)
+              && !std::isnan(id(average_house_temperature).state)
+              && !std::isnan(id(living_room_temperature).state)
+              && !std::isnan(id(average_bedroom_temperature).state)
+              && !std::isnan(id(active_temperature_sensor).state)
+            );
       - logger.log:
           format: "Valid temperature readings received, updating setpoints"
           level: INFO
           tag: "thermostat_ui.on_boot"
+      - select.set:
+          id: temp_source_select
+          option: "Whole House"
       - script.execute:
           id: update_setpoints
           visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
@@ -72,26 +81,52 @@ select:
     id: fan_options_select
     widget: fan_options
     internal: true
+  
+  - platform: lvgl
+    id: temp_source_select
+    widget: temp_source_dropdown
+    name: "Thermostat Source"
+    restore_value: true
+    on_value:
+      then:
+        - lambda: |-
+            // make sure the underlying sensor is available before setting the select
+            bool is_error = false;
+            std::string selected_target = x;
 
+            if (x == "Whole House") {
+              is_error = std::isnan(id(average_house_temperature).state);
+            } else if (x == "Living Room") {
+              is_error = std::isnan(id(living_room_temperature).state);
+            } else if (x == "Bedrooms") {
+              is_error = std::isnan(id(average_bedroom_temperature).state);
+            } else if (x == "Air Handler") {
+              // this might be nan, but otherwise we get an infinite loop
+              is_error = false;
+            } else {
+              is_error = true;
+              ESP_LOGE("select.temp_source_select", "There is no sensor for '%s'!", x.c_str());
+            } 
+
+            if (is_error) {
+              ESP_LOGW("select.temp_source_select", "Sensor for %s selection is unavailable!", x.c_str());
+              id(temp_source_select).publish_state("Air Handler");
+            }
+
+        - component.update: active_temperature_sensor
 script:
 - id: update_current_temp_arcs
   mode: restart
-  parameters:
-    temperature_to_show: float
-    temperature_label: string
   then:
     - lvgl.label.update:
         id: current_temp_number
-        text: !lambda 'return to_string((int)temperature_to_show) + "°F";'
-    - lvgl.label.update:
-        id: current_temp_label
-        text: !lambda 'return temperature_label;'
+        text: !lambda 'return to_string((int)id(active_temperature_sensor).state) + "°F";'
     - lvgl.arc.update:
         id: 
           - heat_arc_actual_temp
           - auto_heat_arc_actual_temp
           - auto_cool_arc_actual_temp
-        value: !lambda 'return (int)temperature_to_show;'
+        value: !lambda 'return (int)id(active_temperature_sensor).state;'
     - lvgl.arc.update:
         id: 
           - cool_arc_actual_temp
@@ -99,10 +134,14 @@ script:
         value: !lambda |-
           int min_val = (int)id(thermostat_arc_min_value_global);
           int max_val = (int)id(thermostat_arc_max_value_global);
-          int actual_temp = (int)temperature_to_show;
+          int actual_temp = (int)id(active_temperature_sensor).state;
           int result = max_val - actual_temp + min_val;
           // FIXME: why is this log message always triggering twice?
-          ESP_LOGI("thermostat_ui.average_house_temperature", "%s temp changed to %f. Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d", temperature_label.c_str(), temperature_to_show, min_val, actual_temp, result);
+          ESP_LOGI(
+            "thermostat_ui.update_current_temp_arcs",
+            "%s temp changed to %f. Updating actual temp arcs: min_val=%d, actual_temp=%d, result=%d",
+            id(temp_source_select).current_option().c_str(), id(active_temperature_sensor).state, min_val, actual_temp, result
+          );
           return result;
 - id: update_setpoints
   mode: restart
@@ -121,13 +160,13 @@ script:
 
         uint8_t internal_setpoint_int;
         // only do setpoint math if both sensors are available
-        if (!std::isnan(id(t1).state) && !std::isnan(id(average_house_temperature).state)) {
+        if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
 
           // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
           // Custom logic to get the controller to get to the desired temperature.
           // calculate the error between the actual temp and the t1 temp
-          float error = id(t1).state - id(average_house_temperature).state;
-          ESP_LOGD("thermostat_ui.update_setpoints","t1: %f, actual: %f, error: %f",id(t1).state,id(average_house_temperature).state,error);
+          float error = id(t1).state - id(active_temperature_sensor).state;
+          ESP_LOGD("thermostat_ui.update_setpoints","t1: %f, actual: %f, error: %f",id(t1).state,id(active_temperature_sensor).state,error);
 
           // add the error to the visible setpoint to get the internal setpoint
           // Ex1: if t1 sees 70 and its actually 75, the error is -5
@@ -151,7 +190,7 @@ script:
           // if the sensors/homeassistant are offline, we can at least still use the thermostat this way (though the setpoint will be compared against the t1 sensor on the unit)
           // TODO: eventually use an onboard sensor for this possiblity.
           ESP_LOGW("thermostat_ui.update_setpoints",
-            "At least one of temperature sensors 't1' and 'average_house_temperature' were offline, setting internal setpoint to the visible setpoint for now."
+            "At least one of temperature sensors 't1' and 'active_temperature_sensor' were offline, setting internal setpoint to the visible setpoint for now."
           );
           internal_setpoint_int = visible_setpoint;
         }
@@ -652,13 +691,78 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°F"
     filters:
-      delta: 0.1
+      delta: 0.25
+    on_value:
+      then:
+        - component.update: active_temperature_sensor 
+  
+  # bedroom temp
+  - platform: homeassistant
+    id: average_bedroom_temperature
+    entity_id: sensor.average_bedroom_temperature
+    device_class: temperature
+    unit_of_measurement: "°F"
+    filters:
+      delta: 0.25
+    on_value:
+      then: 
+        - component.update: active_temperature_sensor 
+  
+  # living room temp
+  - platform: homeassistant
+    id: living_room_temperature
+    entity_id: sensor.lumi_lumi_weather_temperature
+    device_class: temperature
+    unit_of_measurement: "°F"
+    filters:
+      delta: 0.25
+    on_value:
+      then: 
+        - component.update: active_temperature_sensor 
+  
+  # this is the sensor that the thermostat will use
+  - platform: template
+    id: active_temperature_sensor
+    device_class: temperature
+    unit_of_measurement: "°F"
+    update_interval: never # always driven by manual updates from the other temp sensors
+    internal: True
+    lambda: |-
+      float return_val;
+      if (id(temp_source_select).current_option() == "Bedrooms") {
+        return_val = id(average_bedroom_temperature).state;
+      } else if (id(temp_source_select).current_option() == "Living Room") {
+        return_val = id(living_room_temperature).state;
+      } else if (id(temp_source_select).current_option() == "Whole House") {
+        return_val = id(average_house_temperature).state;
+      } else if (id(temp_source_select).current_option() == "Air Handler") {
+        return_val = id(t1).state;
+      } else {
+        ESP_LOGW(
+          "sensor.active_temperature_sensor",
+          "temp_source_select current option is %s, which we have no code path for! Using whole house as the sensor.",
+          id(temp_source_select).current_option().c_str()
+        );
+        return_val = id(average_house_temperature).state;
+        id(temp_source_select).publish_state("Whole House");
+      }
+      if (std::isnan(return_val)) {
+        ESP_LOGW(
+          "sensor.active_temperature_sensor",
+          "Sensor for '%s' is nan",
+          id(temp_source_select).current_option().c_str()
+          );
+        return_val = id(t1).state;
+        if (id(temp_source_select).current_option() != "Air Handler") {
+          // guard against infinite loop in case t1 happens to be nan
+          id(temp_source_select).publish_state("Air Handler");
+        }
+      }
+      return return_val;
     on_value:
       then:
         - script.execute: 
             id: update_current_temp_arcs
-            temperature_to_show: !lambda 'return x;'
-            temperature_label: "Inside"
         - script.execute:
             id: update_setpoints
             visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
@@ -1786,6 +1890,26 @@ lvgl:
                   text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_48
+              - dropdown:
+                  id: temp_source_dropdown
+                  x: 0
+                  y: 0
+                  width: 150
+                  height: 25
+                  align: BOTTOM_MID
+                  options:
+                    - "Whole House"
+                    - "Bedrooms"
+                    - "Living Room"
+                    - "Air Handler"
+                  selected_index: 0
+                  bg_color: !lambda 'return my_colors::main_background_color;'
+                  border_width: 1
+                  border_color: !lambda 'return my_colors::text_dark_gray;'
+                  radius: 12
+                  text_color: !lambda 'return my_colors::main_text_color;'
+                  text_font: montserrat_16
+
               - label:
                   id: current_temp_label
                   x: 0
@@ -1797,6 +1921,7 @@ lvgl:
                   text_color: !lambda 'return my_colors::main_text_color;'
                   text_align: CENTER
                   text_font: montserrat_16
+                  hidden: true # TODO: remove this component altogether if we no longer need it
 
 
         - obj:
