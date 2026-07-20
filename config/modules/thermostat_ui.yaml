@@ -691,7 +691,8 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°F"
     filters:
-      delta: 0.25
+      - lambda: return round(x);
+      - delta: 0.5
     on_value:
       then:
         - component.update: active_temperature_sensor 
@@ -703,7 +704,8 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°F"
     filters:
-      delta: 0.25
+      - lambda: return round(x);
+      - delta: 0.5
     on_value:
       then: 
         - component.update: active_temperature_sensor 
@@ -715,7 +717,8 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°F"
     filters:
-      delta: 0.25
+      - lambda: return round(x);
+      - delta: 0.5
     on_value:
       then: 
         - component.update: active_temperature_sensor 
