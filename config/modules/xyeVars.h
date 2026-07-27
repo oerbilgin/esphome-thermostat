@@ -41,6 +41,7 @@ class xyeVars {
 	std::optional<uint8_t> setTempSend;
 	std::optional<uint8_t> fanBytesSend;
     std::optional<uint8_t> opBytesSend;
+	std::optional<uint8_t> followMeSend;
     uint8_t sendTimeCount = 0;
     bool newInput = false;
     std::string op = "off";

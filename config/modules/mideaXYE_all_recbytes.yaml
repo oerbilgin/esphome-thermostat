@@ -5,8 +5,13 @@
 
 number:
   - id: followme_temp_debug
+    name: FollowMe Manual Set
     platform: template
     optimistic: True
+    min_value: 50
+    max_value: 100
+    step: 1
+    mode: box
     on_value:
       - lambda: |-
           // set a new followme temp
