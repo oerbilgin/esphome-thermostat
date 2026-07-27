@@ -3,6 +3,15 @@
 # This allows us to see what is being received from the air handler
 # and to debug the communication.
 
+number:
+  - id: followme_temp_debug
+    platform: template
+    optimistic: True
+    on_value:
+      - lambda: |-
+          // set a new followme temp
+          xyeVars.followMeSend = x;
+          xyeVars.newInput = true;  
 
 text_sensor:
   - platform: template

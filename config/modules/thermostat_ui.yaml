@@ -30,6 +30,7 @@ esphome:
       - select.set:
           id: temp_source_select
           option: "Whole House"
+      # FIXME: is this still doing anything after followme?
       - script.execute:
           id: update_setpoints
           visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
@@ -160,7 +161,9 @@ script:
 
         uint8_t internal_setpoint_int;
         // only do setpoint math if both sensors are available
-        if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
+        // FIXME: turning this logic block off for now, need to have it switched or something eventually
+        // if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
+        if (false) {
 
           // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
           // Custom logic to get the controller to get to the desired temperature.
@@ -728,7 +731,7 @@ sensor:
     id: active_temperature_sensor
     device_class: temperature
     unit_of_measurement: "°F"
-    update_interval: never # always driven by manual updates from the other temp sensors
+    update_interval: 180s # update every 3 minutes to ensure that a follow-me packet gets sent # FIXME: verify this!
     internal: True
     lambda: |-
       float return_val;
@@ -766,9 +769,15 @@ sensor:
       then:
         - script.execute: 
             id: update_current_temp_arcs
-        - script.execute:
-            id: update_setpoints
-            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+        # FIXME: dont need to call it here at all if using follow me; remove eventually
+        # - script.execute:
+        #     id: update_setpoints
+        #     visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+        # FIXME: uncomment this when done debugging!
+        # - lambda: |-
+        #     // set a new followme temp
+        #     xyeVars.followMeSend = x;
+        #     xyeVars.newInput = true;
   
   # next rain probability
   - platform: homeassistant

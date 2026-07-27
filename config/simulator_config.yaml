@@ -46,7 +46,7 @@ touchscreen:
     display: my_display
 
 substitutions:
-  simulated_number_update_interval: 1s
+  simulated_number_update_interval: never
 
 number: 
 # these are for simulating new data from the midea unit

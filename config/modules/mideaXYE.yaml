@@ -159,9 +159,10 @@ sensor:
             level: DEBUG
             tag: "mideaXYE.t1"
         - component.update: active_temperature_sensor
-        - script.execute:
-            id: update_setpoints
-            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+        # FIXME: we shouldnt need to do this anymore if followme is working; remove eventually
+        # - script.execute:
+        #     id: update_setpoints
+        #     visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
         - component.update: hvac_status
 
 
