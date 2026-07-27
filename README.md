@@ -13,12 +13,22 @@ I had quite a hard time initially getting the esphome setup to get the display r
 The stable hardware setup is now in `config/hardware_config.yaml` and can be reused. The thermostat UI is in `config/thermostat.yaml`
 
 ## Thermostat Control
-- Using `wtahler`'s repo https://github.com/wtahler/esphome-mideaXYE-rs485 as a starting point for the RS485 controls
-
-### Changes performed:
-- 
+- Used `wtahler`'s repo https://github.com/wtahler/esphome-mideaXYE-rs485 as a starting point for the RS485 controls
 
 ## Development tips
+### Setup
+```sh
+uv venv .venv --python 3.12
+source .venv/bin/activate
+uv pip install esphome pillow
+```
+
+### Commands
+Assuming we are in the `venv`, and in the `config/` directory
+- `esphome compile thermostat.yaml`
+- `esphome run thermostat.yaml --device 192.168.1.56`
+- `esphome logs thermostat.yaml --device 192.168.1.56 --no-states`
+
 ### VSCode extensions
 - ESPHome extension
     - set the dashboard URI to `http://localhost:6052`
@@ -28,11 +38,6 @@ The stable hardware setup is now in `config/hardware_config.yaml` and can be reu
 ### ESPHome emulator
 ```sh
 brew install sdl2
-
-uv venv .venv --python 3.12
-source .venv/bin/activate
-uv pip install esphome pillow
-
 source .venv/bin/activate
 cd config
 esphome run simulator_config.yaml
