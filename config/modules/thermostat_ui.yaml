@@ -622,8 +622,8 @@ number:
     mode: box
     unit_of_measurement: "°F"
     device_class: temperature
-    min_value: $thermostat_arc_min_value
-    max_value: $thermostat_arc_max_value
+    min_value: 0 # $thermostat_arc_min_value
+    max_value: 100 # $thermostat_arc_max_value
     step: 1
     optimistic: true
     initial_value: $initial_setpoint_value
@@ -761,6 +761,7 @@ sensor:
         return_val = id(t1).state;
         if (id(temp_source_select).current_option() != "Air Handler") {
           // guard against infinite loop in case t1 happens to be nan
+          // also this prevents follow me from being sent
           id(temp_source_select).publish_state("Air Handler");
         }
       }
@@ -775,9 +776,11 @@ sensor:
         #     visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
         # FIXME: uncomment this when done debugging!
         # - lambda: |-
-        #     // set a new followme temp
-        #     xyeVars.followMeSend = x;
-        #     xyeVars.newInput = true;
+        #     if (id(temp_source_select).current_option() != "Air Handler") {
+        #       // set a new followme temp, only if the temp source isn't the air handler
+        #       xyeVars.followMeSend = x;
+        #       xyeVars.newInput = true;
+        #     }
   
   # next rain probability
   - platform: homeassistant
