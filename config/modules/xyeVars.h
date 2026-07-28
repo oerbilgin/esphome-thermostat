@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+// For reference: https://github.com/HomeOps/ESPHome-Midea-XYE/blob/main/esphome/components/midea_xye/PROTOCOL.md
 
 #define RX_PIN 43 // This is the correct pin for the waveshare device
 #define TX_PIN 44 // This is the correct pin for the waveshare device
