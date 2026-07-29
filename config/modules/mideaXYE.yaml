@@ -55,6 +55,10 @@ interval:
               // is now more than min_setpoint_update_ms?
               return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
           then:
+            - logger.log:
+                tag: "mideaXYE.setpoint_freshener"
+                format: "Freshening setpoint..."
+                level: DEBUG
             - script.execute: 
                 id: update_setpoints
 
