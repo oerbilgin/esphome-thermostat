@@ -6,6 +6,14 @@ substitutions:
   sensor_update_interval: 1s
   aux_update_interval: 15s
 
+globals:
+  - id: min_setpoint_update_ms
+    type: unsigned long
+    initial_value: '180000'
+  - id: last_setpoint_update_ms
+    type: unsigned long
+    initial_value: '0'
+
 script:
 # This script temporarily sets the internal setpoint value
 # need to do it in a separate script because the delay step is not blocking this way vs. in cpp
@@ -15,18 +23,46 @@ script:
       current_internal_setpoint: float
       temporary_setpoint: float
     then:
-      - number.set:
-          id: internal_set_point
-          value: !lambda 'return temporary_setpoint;'
-      - delay: 30s
-      - script.execute: 
-          id: update_setpoints
-          visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+      - if:
+          condition:
+            lambda: |-
+              // is now more than min_setpoint_update_ms?
+              return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
+          then:
+            - number.set:
+                id: internal_set_point
+                value: !lambda 'return temporary_setpoint;'
+            - delay: 30s
+            - script.execute: 
+                id: update_setpoints
+                visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+          else:
+            - lambda: |-
+                ESP_LOGD(
+                  "mideaXYE.jiggle_internal_setpoint",
+                  "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
+                  id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
+                  );
+
 
 interval:
+# this interval keeps the setpoint fresh; fires off the setpoint updater if it's been long eonugh
+  - id: setpoint_freshener
+    interval: 30s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              // is now more than min_setpoint_update_ms?
+              return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
+          then:
+            - script.execute: 
+                id: update_setpoints
+                visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+
 # This interval checks the setpoints and current temps and hvac status
 # and jiggles the internal setpoint if needed to lower the midea's deadband
-  - id: setpoint_watcher
+  - id: setpoint_deadband_watcher
     interval: 60s
     then:
       - lambda: |-
@@ -42,13 +78,13 @@ interval:
               && (hvac_state == "Idle" || hvac_state == "Diffusing")
             ) {
             ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "hvac_mode is %s and hvac_state is %s, checking the setpoint against the deadband...",
               hvac_mode.c_str(), hvac_state.c_str()
             );
           } else {
             ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "hvac_mode is %s and hvac_state is %s, no need to check the setpoint against the deadband, exiting.",
               hvac_mode.c_str(), hvac_state.c_str()
             );
@@ -62,7 +98,7 @@ interval:
           float temporary_setpoint = 0.0;
 
           ESP_LOGD(
-            "mideaXYE.setpoint_watcher",
+            "mideaXYE.setpoint_deadband_watcher",
             "current temp: %f, visible_setpoint: %f, deadband_value: %f",
             current_temp, visible_setpoint, deadband_value
             );
@@ -73,7 +109,7 @@ interval:
             // it is colder than we want yet the hvac isn't heating; increase internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint + deadband_value;
             ESP_LOGI(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "hvac state of %s and temp_delta of %f, need to trigger heating, so temporarily set the internal setpoint to %f",
               hvac_state.c_str(), temp_delta, temporary_setpoint
             );
@@ -81,19 +117,19 @@ interval:
             // it is hotter than we want yet the hvac isn't cooling; decrease internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint - deadband_value;
             ESP_LOGI(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "hvac state of %s and temp_delta of %f, need to trigger cooling, so temporarily set the internal setpoint to %f",
               hvac_state.c_str(), temp_delta, temporary_setpoint
             );
           } else if (hvac_mode == "auto") {
               // TODO: implement this
               ESP_LOGW(
-                "mideaXYE.setpoint_watcher",
+                "mideaXYE.setpoint_deadband_watcher",
                 "Auto mode jiggle not implemented!"
                 );
           } else {
             ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "hvac_mode '%s' and temp_delta '%f' are incompatible for a jiggle.",
               hvac_mode.c_str(), temp_delta
             );
@@ -101,25 +137,25 @@ interval:
           }
 
           ESP_LOGD(
-            "mideaXYE.setpoint_watcher",
+            "mideaXYE.setpoint_deadband_watcher",
             "temporary_setpoint is %f",
             temporary_setpoint
             );
           if (temporary_setpoint != 0) {
             // fire off the script to do the jiggle
             ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "internal_setpoint is %u and t1 temp is %f",
               current_internal_setpoint, id(t1).state
             );
             ESP_LOGI(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "Jiggling internal setpoint from %u to %f for 30 seconds.",
               current_internal_setpoint, temporary_setpoint
             );
             id(jiggle_internal_setpoint).execute(current_internal_setpoint, temporary_setpoint);
           } else ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
+              "mideaXYE.setpoint_deadband_watcher",
               "temporary_setpoint is zero, no need to jiggle."
             );
 
@@ -158,11 +194,24 @@ sensor:
             args: x
             level: DEBUG
             tag: "mideaXYE.t1"
-        - component.update: active_temperature_sensor
-        - script.execute:
-            id: update_setpoints
-            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
-        - component.update: hvac_status
+        - if:
+            condition:
+              lambda: |-
+                // is now more than min_setpoint_update_ms?
+                return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
+            then:
+              - component.update: active_temperature_sensor
+              - script.execute:
+                  id: update_setpoints
+                  visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+              - component.update: hvac_status
+            else:
+              - lambda: |-
+                  ESP_LOGD(
+                    "mideaXYE.t1",
+                    "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
+                    id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
+                    );
 
 
 # this is the temperature of the refrigerant coming into the air handler from the compressor
@@ -631,6 +680,26 @@ number:
     initial_value: 5 # pretty much guaranteed not to fire; full midea control
     restore_value: True
     optimistic: True
+  
+  # this number sets the setpoint cooldown in ms
+  - platform: template
+    name: Setpoint Cooldown Time
+    id: setpoint_cooldown_minutes
+    step: 1
+    mode: box
+    min_value: 1
+    max_value: 60
+    unit_of_measurement: "min"
+    device_class: duration
+    initial_value: 3
+    restore_value: True
+    optimistic: True
+    set_action:
+      lambda: |-
+        unsigned long val = static_cast<unsigned long>(x);
+        unsigned long ms = val * 60UL * 1000UL;
+        id(min_setpoint_update_ms) = ms;
+
 
 # FIXME: weird stuff happens when i activate this. do i even need a climate component at all?
 # climate:

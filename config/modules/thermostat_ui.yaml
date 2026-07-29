@@ -74,7 +74,6 @@ globals:
     restore_value: yes
     initial_value: $initial_setpoint_value
 
-
 select:
   # select to make comparing the fan mode options easier
   - platform: lvgl 
@@ -114,6 +113,10 @@ select:
             }
 
         - component.update: active_temperature_sensor
+        # When changing the temp source, force a setpoint update regardless of cooldown timer
+        - script.execute:
+            id: update_setpoints
+            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
 script:
 - id: update_current_temp_arcs
   mode: restart
@@ -160,6 +163,7 @@ script:
 
         uint8_t internal_setpoint_int;
         // only do setpoint math if both sensors are available
+        // FIXME: add a timer for this logic such that it only triggers if it's been at least 3 minutes since the last update
         if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
 
           // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
@@ -200,6 +204,10 @@ script:
         auto call = id(internal_set_point).make_call();
         call.set_value(internal_setpoint_int);
         call.perform();
+
+        // record that we updated the setpoint right now
+        // this is used to guard setting the setpoint too frequently via automation
+        id(last_setpoint_update_ms) = millis();
 
         // turn off the flag
         id(setpoint_updating) = false;
@@ -766,9 +774,22 @@ sensor:
       then:
         - script.execute: 
             id: update_current_temp_arcs
-        - script.execute:
-            id: update_setpoints
-            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+        - if:
+            condition:
+              lambda: |-
+                // is now more than min_setpoint_update_ms?
+                return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
+            then:
+              - script.execute:
+                  id: update_setpoints
+                  visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+            else:
+              - lambda: |-
+                  ESP_LOGD(
+                    "thermostat_ui.active_temperature_sensor",
+                    "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
+                    id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
+                    );
   
   # next rain probability
   - platform: homeassistant
