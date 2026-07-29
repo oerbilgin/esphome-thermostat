@@ -13,6 +13,7 @@ number:
     initial_value: 0
     optimistic: true
     entity_category: "diagnostic"
+    mode: box
     set_action:
       - lambda: |-
           uint8_t byte_val = x;
@@ -28,6 +29,7 @@ number:
     initial_value: 0
     optimistic: true
     entity_category: "diagnostic"
+    mode: box
     set_action:
       - lambda: |-
           uint8_t byte_val = x;
@@ -43,6 +45,7 @@ number:
     initial_value: 0
     optimistic: true
     entity_category: "diagnostic"
+    mode: box
     set_action:
       - lambda: |-
           uint8_t byte_val = x;
