@@ -691,9 +691,6 @@ sensor:
     entity_id: sensor.average_house_temperature
     device_class: temperature
     unit_of_measurement: "°F"
-    filters:
-      - lambda: return round(x);
-      - delta: 0.5
     on_value:
       then:
         - component.update: active_temperature_sensor 
@@ -704,9 +701,6 @@ sensor:
     entity_id: sensor.average_bedroom_temperature
     device_class: temperature
     unit_of_measurement: "°F"
-    filters:
-      - lambda: return round(x);
-      - delta: 0.5
     on_value:
       then: 
         - component.update: active_temperature_sensor 
@@ -717,9 +711,6 @@ sensor:
     entity_id: sensor.lumi_lumi_weather_temperature
     device_class: temperature
     unit_of_measurement: "°F"
-    filters:
-      - lambda: return round(x);
-      - delta: 0.5
     on_value:
       then: 
         - component.update: active_temperature_sensor 
@@ -731,6 +722,9 @@ sensor:
     unit_of_measurement: "°F"
     update_interval: never # always driven by manual updates from the other temp sensors
     internal: True
+    filters:
+      - lambda: return round(x);
+      - delta: 0.5
     lambda: |-
       float return_val;
       if (id(temp_source_select).current_option() == "Bedrooms") {
