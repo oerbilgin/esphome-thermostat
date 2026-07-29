@@ -48,167 +48,167 @@ touchscreen:
 substitutions:
   simulated_number_update_interval: 1s
 
-number: 
-# these are for simulating new data from the midea unit
-  - platform: template
-    name: "Simulated xyeVars.fanBytes"
-    id: xyeVars_fanBytes
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 255
-    update_interval: $simulated_number_update_interval
-    lambda: |-
-      return id(fanBytes).state;
-    set_action:
-      - lambda: |-
-          id(fanBytes).publish_state(x);
-          xyeVars.fanBytes = x;
-          xyeVars.recData[REC_FAN] = x;
-          xyeVars.newInput = false;
-    on_value:
-      - lambda: |-
-          id(fanBytes).publish_state(x);
-          xyeVars.fanBytes = x;
-          xyeVars.recData[REC_FAN] = x;
-          xyeVars.newInput = false;
+# number: 
+# # these are for simulating new data from the midea unit
+#   - platform: template
+#     name: "Simulated xyeVars.fanBytes"
+#     id: xyeVars_fanBytes
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 255
+#     update_interval: $simulated_number_update_interval
+#     lambda: |-
+#       return id(fanBytes).state;
+#     set_action:
+#       - lambda: |-
+#           id(fanBytes).publish_state(x);
+#           xyeVars.fanBytes = x;
+#           xyeVars.recData[REC_FAN] = x;
+#           xyeVars.newInput = false;
+#     on_value:
+#       - lambda: |-
+#           id(fanBytes).publish_state(x);
+#           xyeVars.fanBytes = x;
+#           xyeVars.recData[REC_FAN] = x;
+#           xyeVars.newInput = false;
 
-  - platform: template
-    name: "Simulated xyeVars.fanBytesSend"
-    id: xyeVars_fanBytesSend
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 255
-    update_interval: $simulated_number_update_interval
-    lambda: |-
-      return xyeVars.fanBytesSend;
-    on_value:
-      - lambda: |-
-          xyeVars.fanBytesSend = x;
-          xyeVars.fanBytes = x;
-          xyeVars.recData[REC_FAN] = x;
-          id(fanBytes).publish_state(x);
-          xyeVars.newInput = false;
-    set_action:
-      - lambda: |-
-          xyeVars.fanBytesSend = x;
-          xyeVars.fanBytes = x;
-          xyeVars.recData[REC_FAN] = x;
-          id(fanBytes).publish_state(x);
-          xyeVars.newInput = false;
+#   - platform: template
+#     name: "Simulated xyeVars.fanBytesSend"
+#     id: xyeVars_fanBytesSend
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 255
+#     update_interval: $simulated_number_update_interval
+#     lambda: |-
+#       return xyeVars.fanBytesSend;
+#     on_value:
+#       - lambda: |-
+#           xyeVars.fanBytesSend = x;
+#           xyeVars.fanBytes = x;
+#           xyeVars.recData[REC_FAN] = x;
+#           id(fanBytes).publish_state(x);
+#           xyeVars.newInput = false;
+#     set_action:
+#       - lambda: |-
+#           xyeVars.fanBytesSend = x;
+#           xyeVars.fanBytes = x;
+#           xyeVars.recData[REC_FAN] = x;
+#           id(fanBytes).publish_state(x);
+#           xyeVars.newInput = false;
 
-  - platform: template
-    name: "Simulated xyeVars.opBytes"
-    id: xyeVars_opBytes
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 255
-    update_interval: $simulated_number_update_interval
-    lambda: |-
-      return id(opBytes).state;
-    on_value:
-      - lambda: |-
-          xyeVars.opBytes = x;
-          xyeVars.recData[REC_MODE] = x;
-          id(opBytes).publish_state(x);
-          xyeVars.newInput = false;
-    set_action:
-      - lambda: |-
-          xyeVars.opBytes = x;
-          xyeVars.recData[REC_MODE] = x;
-          id(opBytes).publish_state(x);
-          xyeVars.newInput = false;
+#   - platform: template
+#     name: "Simulated xyeVars.opBytes"
+#     id: xyeVars_opBytes
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 255
+#     update_interval: $simulated_number_update_interval
+#     lambda: |-
+#       return id(opBytes).state;
+#     on_value:
+#       - lambda: |-
+#           xyeVars.opBytes = x;
+#           xyeVars.recData[REC_MODE] = x;
+#           id(opBytes).publish_state(x);
+#           xyeVars.newInput = false;
+#     set_action:
+#       - lambda: |-
+#           xyeVars.opBytes = x;
+#           xyeVars.recData[REC_MODE] = x;
+#           id(opBytes).publish_state(x);
+#           xyeVars.newInput = false;
 
-  - platform: template
-    name: "Simulated xyeVars.opBytesSend"
-    id: xyeVars_opBytesSend
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 255
-    update_interval: $simulated_number_update_interval
-    lambda: |-
-      return xyeVars.opBytesSend;
-    on_value:
-      - lambda: |-
-          xyeVars.opBytesSend = x;
-          xyeVars.opBytes = x;
-          xyeVars.recData[REC_MODE] = x;
-          id(opBytes).publish_state(x);
-          xyeVars.newInput = false;
-    set_action:
-      - lambda: |-
-          xyeVars.opBytesSend = x;
-          xyeVars.opBytes = x;
-          xyeVars.recData[REC_MODE] = x;
-          id(opBytes).publish_state(x);
-          xyeVars.newInput = false;
+#   - platform: template
+#     name: "Simulated xyeVars.opBytesSend"
+#     id: xyeVars_opBytesSend
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 255
+#     update_interval: $simulated_number_update_interval
+#     lambda: |-
+#       return xyeVars.opBytesSend;
+#     on_value:
+#       - lambda: |-
+#           xyeVars.opBytesSend = x;
+#           xyeVars.opBytes = x;
+#           xyeVars.recData[REC_MODE] = x;
+#           id(opBytes).publish_state(x);
+#           xyeVars.newInput = false;
+#     set_action:
+#       - lambda: |-
+#           xyeVars.opBytesSend = x;
+#           xyeVars.opBytes = x;
+#           xyeVars.recData[REC_MODE] = x;
+#           id(opBytes).publish_state(x);
+#           xyeVars.newInput = false;
 
-  - platform: template
-    name: "Simulated xyeVars.setTemp"
-    id: xyeVars_setTemp
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 100
-    # keep it synced with setTemp if that changes
-    update_interval: $simulated_number_update_interval
-    lambda: |-
-      return xyeVars.setTemp;
-    on_value:
-      - lambda: |-
-          xyeVars.setTemp = x;
-          xyeVars.recData[REC_TEMP] = x;
-          xyeVars.newInput = false;
-    set_action:
-      - lambda: |-
-          xyeVars.setTemp = x;
-          xyeVars.recData[REC_TEMP] = x;
-          xyeVars.newInput = false;
+#   - platform: template
+#     name: "Simulated xyeVars.setTemp"
+#     id: xyeVars_setTemp
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 100
+#     # keep it synced with setTemp if that changes
+#     update_interval: $simulated_number_update_interval
+#     lambda: |-
+#       return xyeVars.setTemp;
+#     on_value:
+#       - lambda: |-
+#           xyeVars.setTemp = x;
+#           xyeVars.recData[REC_TEMP] = x;
+#           xyeVars.newInput = false;
+#     set_action:
+#       - lambda: |-
+#           xyeVars.setTemp = x;
+#           xyeVars.recData[REC_TEMP] = x;
+#           xyeVars.newInput = false;
   
-  - platform: template
-    name: "Simulated xyeVars.setTempSend"
-    id: xyeVars_setTempSend
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 100
-    # keep it synced with setTemp if that changes
-    update_interval: $simulated_number_update_interval
-    lambda: |-
-      return xyeVars.setTempSend;
-    on_value:
-      - lambda: |-
-          xyeVars.setTemp = x;
-          xyeVars.setTempSend = x;
-          xyeVars.recData[REC_TEMP] = x;
-          xyeVars.newInput = false;
-    set_action:
-      - lambda: |-
-          xyeVars.setTemp = x;
-          xyeVars.setTempSend = x;
-          xyeVars.recData[REC_TEMP] = x;
-          xyeVars.newInput = false;
+#   - platform: template
+#     name: "Simulated xyeVars.setTempSend"
+#     id: xyeVars_setTempSend
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 100
+#     # keep it synced with setTemp if that changes
+#     update_interval: $simulated_number_update_interval
+#     lambda: |-
+#       return xyeVars.setTempSend;
+#     on_value:
+#       - lambda: |-
+#           xyeVars.setTemp = x;
+#           xyeVars.setTempSend = x;
+#           xyeVars.recData[REC_TEMP] = x;
+#           xyeVars.newInput = false;
+#     set_action:
+#       - lambda: |-
+#           xyeVars.setTemp = x;
+#           xyeVars.setTempSend = x;
+#           xyeVars.recData[REC_TEMP] = x;
+#           xyeVars.newInput = false;
 
-  - platform: template
-    name: "Simulated T1 temp"
-    id: t1_sim
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 100
-    optimistic: true
-    set_action:
-      - logger.log:
-          format: "Simulated t1 temp set to %f, updating xyeVars.recData"
-          args: x
-          level: DEBUG
-          tag: simulator_config.t1_sim
-      - lambda: |-
-          xyeVars.recData[T1_INDEX] = x;
-          ESP_LOGD("simulator_config.t1_sim", "xyeVars.recData[%i] is now %u", T1_INDEX, xyeVars.recData[T1_INDEX]);
+#   - platform: template
+#     name: "Simulated T1 temp"
+#     id: t1_sim
+#     step: 1
+#     mode: box
+#     min_value: 0
+#     max_value: 100
+#     optimistic: true
+#     set_action:
+#       - logger.log:
+#           format: "Simulated t1 temp set to %f, updating xyeVars.recData"
+#           args: x
+#           level: DEBUG
+#           tag: simulator_config.t1_sim
+#       - lambda: |-
+#           xyeVars.recData[T1_INDEX] = x;
+#           ESP_LOGD("simulator_config.t1_sim", "xyeVars.recData[%i] is now %u", T1_INDEX, xyeVars.recData[T1_INDEX]);
   # - platform: template
   #   name: "Simulated fanmode"
   #   id: fan_sim
