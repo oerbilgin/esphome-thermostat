@@ -778,7 +778,7 @@ sensor:
                   
             else:
               - lambda: |-
-                  ESP_LOGD(
+                  ESP_LOGI(
                     "thermostat_ui.active_temperature_sensor",
                     "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
                     id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)

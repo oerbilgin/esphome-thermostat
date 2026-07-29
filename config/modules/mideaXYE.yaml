@@ -37,7 +37,7 @@ script:
                 id: update_setpoints
           else:
             - lambda: |-
-                ESP_LOGD(
+                ESP_LOGI(
                   "mideaXYE.jiggle_internal_setpoint",
                   "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
                   id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
@@ -204,7 +204,7 @@ sensor:
               - component.update: hvac_status
             else:
               - lambda: |-
-                  ESP_LOGD(
+                  ESP_LOGI(
                     "mideaXYE.t1",
                     "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
                     id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
