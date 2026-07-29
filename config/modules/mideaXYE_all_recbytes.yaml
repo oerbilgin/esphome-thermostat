@@ -3,6 +3,52 @@
 # This allows us to see what is being received from the air handler
 # and to debug the communication.
 
+number:
+  - platform: template
+    name: "Send Op byte"
+    id: send_mode_debug
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: 0
+    optimistic: true
+    entity_category: "diagnostic"
+    set_action:
+      - lambda: |-
+          uint8_t byte_val = x;
+          ESP_LOGI("send_mode_debug", "Parsed uint8_t value: 0x%02X (%u)", byte_val, byte_val);
+          xyeVars.opBytesSend = byte_val;
+          xyeVars.newInput = true;
+  - platform: template
+    name: "Send Fan byte"
+    id: send_fan_debug
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: 0
+    optimistic: true
+    entity_category: "diagnostic"
+    set_action:
+      - lambda: |-
+          uint8_t byte_val = x;
+          ESP_LOGI("send_fan_debug", "Parsed uint8_t value: 0x%02X (%u)", byte_val, byte_val);
+          xyeVars.fanBytesSend = byte_val;
+          xyeVars.newInput = true;
+  - platform: template
+    name: "Send temp byte"
+    id: send_temp_debug
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: 0
+    optimistic: true
+    entity_category: "diagnostic"
+    set_action:
+      - lambda: |-
+          uint8_t byte_val = x;
+          ESP_LOGI("send_temp_debug", "Parsed uint8_t value: 0x%02X (%u)", byte_val, byte_val);
+          xyeVars.setTempSend = byte_val;
+          xyeVars.newInput = true;
 
 text_sensor:
   - platform: template
