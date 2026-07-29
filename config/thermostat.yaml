@@ -4,6 +4,12 @@ esphome:
   name: hvac-thermostat
   friendly_name: HVAC Thermostat
 
+safe_mode:
+
+button:
+  - platform: safe_mode
+    name: "Thermostat Restart (Safe Mode)"
+
 logger:
   level: DEBUG
 
