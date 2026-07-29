@@ -32,7 +32,6 @@ esphome:
           option: "Whole House"
       - script.execute:
           id: update_setpoints
-          visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
 
 json:
 
@@ -116,7 +115,6 @@ select:
         # When changing the temp source, force a setpoint update regardless of cooldown timer
         - script.execute:
             id: update_setpoints
-            visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
 script:
 - id: update_current_temp_arcs
   mode: restart
@@ -148,14 +146,11 @@ script:
           return result;
 - id: update_setpoints
   mode: restart
-  # make this the parameter so it can be used by set_action of the visible_setpoint_value number,
-  # which shows the new value as 'x'; we can see the old value with id(visible_setpoint_value).state
-  parameters:
-    visible_setpoint: float
   then:
     - lambda: |-
         // turn on the flag to prevent UI glitches
         id(setpoint_updating) = true;
+        float visible_setpoint = id(visible_setpoint_value).state;
 
         // update the visual components
         lv_arc_set_value(id(setpoint_arc), visible_setpoint);
@@ -163,7 +158,6 @@ script:
 
         uint8_t internal_setpoint_int;
         // only do setpoint math if both sensors are available
-        // FIXME: add a timer for this logic such that it only triggers if it's been at least 3 minutes since the last update
         if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
 
           // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
@@ -633,7 +627,7 @@ number:
     optimistic: true
     initial_value: $initial_setpoint_value
     restore_value: true
-    set_action:
+    on_value:
       - logger.log:
           format: "visible_setpoint_value changed to %.1f, running update_setpoint script."
           args: x
@@ -641,7 +635,6 @@ number:
           tag: "thermostat_ui.visible_setpoint_value"
       - script.execute: 
           id: update_setpoints
-          visible_setpoint: x
 
 sensor:
   # AQI
@@ -782,7 +775,7 @@ sensor:
             then:
               - script.execute:
                   id: update_setpoints
-                  visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
+                  
             else:
               - lambda: |-
                   ESP_LOGD(

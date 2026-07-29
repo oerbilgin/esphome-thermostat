@@ -35,7 +35,6 @@ script:
             - delay: 30s
             - script.execute: 
                 id: update_setpoints
-                visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
           else:
             - lambda: |-
                 ESP_LOGD(
@@ -58,7 +57,6 @@ interval:
           then:
             - script.execute: 
                 id: update_setpoints
-                visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
 
 # This interval checks the setpoints and current temps and hvac status
 # and jiggles the internal setpoint if needed to lower the midea's deadband
@@ -203,7 +201,6 @@ sensor:
               - component.update: active_temperature_sensor
               - script.execute:
                   id: update_setpoints
-                  visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
               - component.update: hvac_status
             else:
               - lambda: |-
