@@ -616,6 +616,21 @@ script:
 
 number:
   - platform: template
+    id: screen_dim_level
+    name: Screen Dim Level
+    min_value: 0
+    max_value: 100
+    step: 5
+    initial_value: 50
+    optimistic: True
+    on_value:
+      then:
+        - lvgl.widget.update:
+            id: screen_dimmer
+            bg_opa: !lambda |-
+              // convert 0-100 percent to 0-255 lvgl opacity
+              return (uint8_t)(x * 2.55f);
+  - platform: template
     id: visible_setpoint_value
     name: "Setpoint"
     mode: box
@@ -2428,15 +2443,14 @@ lvgl:
             y: 0
             width: 800
             height: 480
-            hidden: true
             bg_color: !lambda 'return my_colors::main_text_color;'
             border_width: 0
             border_color: !lambda 'return my_colors::dimmer_color;'
             radius: 0
             opa: 50%
             pad_all: 0
-            clickable: true
-            on_short_click:
-              - lvgl.widget.hide:
-                  id: screen_dimmer
-        
+            clickable: false
+            # hidden: true
+            # on_short_click:
+            #   - lvgl.widget.hide:
+            #       id: screen_dimmer
