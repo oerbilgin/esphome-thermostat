@@ -623,13 +623,16 @@ number:
     step: 5
     initial_value: 50
     optimistic: True
+    entity_category: "config"
     on_value:
       then:
         - lvgl.widget.update:
             id: screen_dimmer
             bg_opa: !lambda |-
               // convert 0-100 percent to 0-255 lvgl opacity
-              return (uint8_t)(x * 2.55f);
+              uint8_t opa = (uint8_t)(x * 2.55f);
+              ESP_LOGI("thermostat_ui", "Screen Dimmer set to: %u", opa);
+              return (lv_opa_t)opa;
   - platform: template
     id: visible_setpoint_value
     name: "Setpoint"
@@ -1185,14 +1188,6 @@ font:
     ]
 
 lvgl:
-  # dim the screen after 30 seconds of inactivity
-  on_idle:
-    - timeout: 30s
-      then:
-        - lvgl.widget.show:
-            id: screen_dimmer
-  
-
   pages:
     - id: canvas
       bg_color: !lambda 'return my_colors::main_background_color;'
@@ -2447,10 +2442,6 @@ lvgl:
             border_width: 0
             border_color: !lambda 'return my_colors::dimmer_color;'
             radius: 0
-            opa: 50%
+            opa: 100%
             pad_all: 0
             clickable: false
-            # hidden: true
-            # on_short_click:
-            #   - lvgl.widget.hide:
-            #       id: screen_dimmer
