@@ -90,8 +90,8 @@ i2c:
   - id: i2c_bus
     sda: 8
     scl: 9
-    scan: true
-    frequency: 400kHz
+    # scan: true
+    # frequency: 400kHz
 
 psram:
   mode: octal
@@ -123,3 +123,59 @@ touchscreen:
     on_touch:
       - lambda: |-
           ESP_LOGD("hardware_config.my_touchscreen", "Touch detected at x=%d, y=%d", touch.x, touch.y);
+    on_release:
+      # lvgl only gets paused if backlight is off, so is a good proxy for that
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - switch.turn_on: lcd_backlight
+
+
+switch:
+  # Backlight Control Switch (Using CH422G Expanders via I2C)
+  - platform: template
+    name: "Display Backlight"
+    id: lcd_backlight
+    icon: "mdi:projector-screen-variant"
+    restore_mode: ALWAYS_ON
+    optimistic: true
+    turn_on_action:
+      - lvgl.resume:
+      - lvgl.widget.redraw:
+      - lambda: |-
+          uint8_t mode_cmd = 0x01;
+          id(i2c_bus).write(0x24, &mode_cmd, 1);
+          uint8_t data_cmd = 0x0E; // high
+          id(i2c_bus).write(0x38, &data_cmd, 1);
+    turn_off_action:
+      - lambda: |-
+          uint8_t mode_cmd = 0x01;
+          id(i2c_bus).write(0x24, &mode_cmd, 1);
+          uint8_t data_cmd = 0x0A; // low
+          id(i2c_bus).write(0x38, &data_cmd, 1);
+      - lvgl.pause:
+  
+  # Backlight night time mode; used by touchscreen to determine how to handle timeout 
+  - platform: template
+    name: "Backlight Night Mode"
+    id: backlight_night_mode
+    icon: "mdi:lightbulb-night"
+    optimistic: true
+    restore_mode: ALWAYS_OFF
+    turn_on_action:
+      - switch.turn_off: lcd_backlight
+    turn_off_action:
+      - switch.turn_on: lcd_backlight
+
+lvgl:
+  # Auto-sleep when no user interaction occurs
+  on_idle:
+    timeout: 30s
+    then:
+      - if:
+          condition:
+            switch.is_on: backlight_night_mode
+          then:
+            - switch.turn_off: lcd_backlight
