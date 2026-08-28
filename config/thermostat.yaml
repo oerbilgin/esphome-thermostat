@@ -11,7 +11,7 @@ button:
     name: "Thermostat Restart (Safe Mode)"
 
 logger:
-  level: DEBUG
+  level: INFO
 
 packages:
   hardware_config: !include modules/hardware_config.yaml
