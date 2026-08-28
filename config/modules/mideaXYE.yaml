@@ -693,11 +693,11 @@ number:
     entity_category: "config"
     step: 1
     mode: box
-    min_value: 1
-    max_value: 60
+    min_value: 0
+    max_value: 5
     unit_of_measurement: "min"
     device_class: duration
-    initial_value: 3
+    initial_value: 0
     restore_value: True
     optimistic: True
     set_action:
