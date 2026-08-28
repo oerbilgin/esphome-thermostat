@@ -191,6 +191,7 @@ sensor:
                   option: "Air Handler"
               - script.execute: 
                   id: update_current_temp_arcs
+        - component.update: active_temperature_sensor
         - logger.log:
             format: "t1 emperature changed to %.1f, executing update_setpoints script"
             args: x
@@ -202,7 +203,6 @@ sensor:
                 // is now more than min_setpoint_update_ms?
                 return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
             then:
-              - component.update: active_temperature_sensor
               - script.execute:
                   id: update_setpoints
               - component.update: hvac_status
