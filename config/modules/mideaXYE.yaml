@@ -665,10 +665,13 @@ number:
     set_action:
       - then:
         - lambda: |-
-            ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
-            xyeVars.setTempSend = x;
-            xyeVars.newInput = true;
-            id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
+            // only send a new value if it's different from the old value. Prevents unnecessary sends.
+            if (x != id(internal_set_point).state) {
+              ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
+              xyeVars.setTempSend = x;
+              xyeVars.newInput = true;
+              id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
+            }
   
   # this number defines a custom deadband we can use to override the midea unit's internal deadband
   # by seeing if the temp delta between setpoint and actual is greater than the deadband, we can jiggle the setpoint to force the unit to kick on.
