@@ -649,7 +649,7 @@ number:
       - logger.log:
           format: "visible_setpoint_value changed to %.1f, running update_setpoint script."
           args: x
-          level: DEBUG
+          level: INFO
           tag: "thermostat_ui.visible_setpoint_value"
       - script.execute: 
           id: update_setpoints
@@ -739,7 +739,7 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°F"
     update_interval: never # always driven by manual updates from the other temp sensors
-    internal: True
+    entity_category: "diagnostic"
     filters:
       - lambda: return round(x);
       - delta: 0.5

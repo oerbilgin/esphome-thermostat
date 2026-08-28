@@ -27,6 +27,8 @@ script:
           condition:
             lambda: |-
               // is now more than min_setpoint_update_ms?
+              // FIXME: only run this and all other checks (make a function) if hvac mode is cool, heat, auto
+              // so that the t1 temp can equilibrate faster. or just get rid of the cooldown?
               return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
           then:
             - number.set:
@@ -195,7 +197,7 @@ sensor:
         - logger.log:
             format: "t1 emperature changed to %.1f, executing update_setpoints script"
             args: x
-            level: DEBUG
+            level: INFO
             tag: "mideaXYE.t1"
         - if:
             condition:
