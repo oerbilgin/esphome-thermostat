@@ -185,7 +185,7 @@ script:
 
           // convert to uint8_t for sending to the midea unit
           internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
-          ESP_LOGD("thermostat_ui.update_setpoints","internal setpoint int: %d",internal_setpoint_int);
+          ESP_LOGD("thermostat_ui.update_setpoints","Final adjusted, rounded internal setpoint int: %d",internal_setpoint_int);
         } else {
           // if the sensors/homeassistant are offline, we can at least still use the thermostat this way (though the setpoint will be compared against the t1 sensor on the unit)
           // TODO: eventually use an onboard sensor for this possiblity.
@@ -197,6 +197,11 @@ script:
 
         // set the number representing the internal setpoint of the midea unit
         // this method triggers the set_action
+        ESP_LOGI(
+          "thermostat_ui.update_setpoints",
+          "Setting internal setpoint value to %d",
+          internal_setpoint_int
+        );
         auto call = id(internal_set_point).make_call();
         call.set_value(internal_setpoint_int);
         call.perform();
@@ -779,6 +784,13 @@ sensor:
       return return_val;
     on_value:
       then:
+        - lambda: |-
+            ESP_LOGI(
+              "thermostat_ui.active_temperature_sensor",
+              "Got a new value %f from the active '%s' thermostat source",
+              x,
+              id(temp_source_select).current_option().c_str()
+              );
         - script.execute: 
             id: update_current_temp_arcs
         - if:
