@@ -159,6 +159,8 @@ script:
         uint8_t internal_setpoint_int;
         // only do setpoint math if both sensors are available
         if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
+          // First, update the active sensor before calculating error
+          id(active_temperature_sensor).update();
 
           // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
           // Custom logic to get the controller to get to the desired temperature.
@@ -781,9 +783,14 @@ sensor:
             id: update_current_temp_arcs
         - if:
             condition:
+              # TODO: make this a common function to reuse
               lambda: |-
-                // is now more than min_setpoint_update_ms?
-                return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
+                // if this update is called by setpoint update, dont call setpoint update again
+                bool is_setpoint_updating = id(setpoint_updating);
+                // dont update setpoints too frequently (avoid short cycling)
+                // NOTE: this conditional may not actually be necessary
+                bool is_in_setpoint_cooldown = (millis() - id(last_setpoint_update_ms)) < id(min_setpoint_update_ms);
+                return !is_setpoint_updating && !is_in_setpoint_cooldown;
             then:
               - script.execute:
                   id: update_setpoints

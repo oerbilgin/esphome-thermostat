@@ -193,12 +193,12 @@ sensor:
                   option: "Air Handler"
               - script.execute: 
                   id: update_current_temp_arcs
-        - component.update: active_temperature_sensor
         - logger.log:
-            format: "t1 emperature changed to %.1f, executing update_setpoints script"
+            format: "t1 emperature changed to %.1f, updating active sensor and setpoints"
             args: x
             level: INFO
             tag: "mideaXYE.t1"
+        - component.update: active_temperature_sensor
         - if:
             condition:
               lambda: |-
