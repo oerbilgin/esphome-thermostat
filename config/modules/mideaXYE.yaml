@@ -573,8 +573,8 @@ select:
       
       // final check if the fan is actually on
       if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
-        result = "Error";
+        ESP_LOGW("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Probably the unit just turned off.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
+        result = "Idle";
       }
 
       ESP_LOGD("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
