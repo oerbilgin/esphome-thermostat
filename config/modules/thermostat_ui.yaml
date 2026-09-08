@@ -195,20 +195,28 @@ script:
           internal_setpoint_int = visible_setpoint;
         }
 
-        // set the number representing the internal setpoint of the midea unit
-        // this method triggers the set_action
-        ESP_LOGI(
-          "thermostat_ui.update_setpoints",
-          "Setting internal setpoint value to %d",
-          internal_setpoint_int
-        );
-        auto call = id(internal_set_point).make_call();
-        call.set_value(internal_setpoint_int);
-        call.perform();
+        if (id(internal_set_point).state != internal_setpoint_int) {
+          // set the number representing the internal setpoint of the midea unit
+          // this method triggers the set_action
+          ESP_LOGI(
+            "thermostat_ui.update_setpoints",
+            "Setting internal setpoint value to %d",
+            internal_setpoint_int
+          );
+          auto call = id(internal_set_point).make_call();
+          call.set_value(internal_setpoint_int);
+          call.perform();
 
-        // record that we updated the setpoint right now
-        // this is used to guard setting the setpoint too frequently via automation
-        id(last_setpoint_update_ms) = millis();
+          // record that we updated the setpoint right now
+          // this is used to guard setting the setpoint too frequently via automation
+          id(last_setpoint_update_ms) = millis();
+        } else {
+          ESP_LOGD(
+          "thermostat_ui.update_setpoints",
+          "Internal setpoint is %d, which is equal to the newly calculated setpoint of %d, so nothing will happen.",
+          id(internal_set_point).state, internal_setpoint_int
+        );
+        }
 
         // turn off the flag
         id(setpoint_updating) = false;
