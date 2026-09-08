@@ -9,7 +9,7 @@ substitutions:
 globals:
   - id: min_setpoint_update_ms
     type: unsigned long
-    initial_value: '180000'
+    initial_value: '0' # NOTE: make sure this is synced up with min_setpoint_update_ms global
   - id: last_setpoint_update_ms
     type: unsigned long
     initial_value: '0'
@@ -700,7 +700,7 @@ number:
     max_value: 5
     unit_of_measurement: "min"
     device_class: duration
-    initial_value: 0
+    initial_value: 0 # NOTE: make sure this is synced up with min_setpoint_update_ms global
     restore_value: True
     optimistic: True
     set_action:
