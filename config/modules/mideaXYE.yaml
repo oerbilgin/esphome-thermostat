@@ -109,7 +109,7 @@ interval:
 
           float temp_delta = current_temp - visible_setpoint;
 
-          if (temp_delta < -deadband_value && hvac_mode == "heat") {
+          if (temp_delta <= -deadband_value && hvac_mode == "heat") {
             // it is colder than we want yet the hvac isn't heating; increase internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint + deadband_value;
             ESP_LOGI(
@@ -117,7 +117,7 @@ interval:
               "hvac state of %s and temp_delta of %f, need to trigger heating, so temporarily set the internal setpoint to %f",
               hvac_state.c_str(), temp_delta, temporary_setpoint
             );
-          } else if (temp_delta > deadband_value && hvac_mode == "cool") {
+          } else if (temp_delta >= deadband_value && hvac_mode == "cool") {
             // it is hotter than we want yet the hvac isn't cooling; decrease internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint - deadband_value;
             ESP_LOGI(
