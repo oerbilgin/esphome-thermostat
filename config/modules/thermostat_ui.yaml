@@ -214,7 +214,7 @@ script:
           // thermostat switches to cool mode from off, setpoint is 72, measured is 72.7
           // delta is 0.7, cooling active is false, cooling active is switched to true, we round internal setpoint down to 72
           if (hvac_mode == "cool") {
-            float delta = true_temp - visible_setpoint // how much we have left to cool
+            float delta = true_temp - visible_setpoint; // how much we have left to cool
             if (
               // if we aren't cooling and we are 0.5 degrees or more above the target temp, round setpoint down to trigger cooling
               (!hysteresis_cooling_active) && (delta >= 0.5)
@@ -225,14 +225,12 @@ script:
               (hysteresis_cooling_active) && (delta <= -0.1)
             ) {
               id(hysteresis_cooling_active) = false;
-            } else if (
-              // if we are not cooling but 
-            )
+            } 
             internal_setpoint_int = id(hysteresis_cooling_active) ? (uint8_t)floor(raw) : (uint8_t)ceil(raw);
           }
 
           if (hvac_mode == "heat") {
-            float delta = visible_setpoint - true_temp // how much we have left to cool
+            float delta = visible_setpoint - true_temp; // how much we have left to cool
             if (
               // if we aren't heating and we are 0.5 degrees or more below the target temp, round setpoint up to trigger heating
               (!hysteresis_heating_active) && (delta >= 0.5)
