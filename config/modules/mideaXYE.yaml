@@ -9,7 +9,7 @@ substitutions:
 globals:
   - id: min_setpoint_update_ms
     type: unsigned long
-    initial_value: '180000'
+    initial_value: '0' # NOTE: make sure this is synced up with min_setpoint_update_ms global
   - id: last_setpoint_update_ms
     type: unsigned long
     initial_value: '0'
@@ -27,6 +27,8 @@ script:
           condition:
             lambda: |-
               // is now more than min_setpoint_update_ms?
+              // FIXME: only run this and all other checks (make a function) if hvac mode is cool, heat, auto
+              // so that the t1 temp can equilibrate faster. or just get rid of the cooldown?
               return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
           then:
             - number.set:
@@ -107,7 +109,7 @@ interval:
 
           float temp_delta = current_temp - visible_setpoint;
 
-          if (temp_delta < -deadband_value && hvac_mode == "heat") {
+          if (temp_delta <= -deadband_value && hvac_mode == "heat") {
             // it is colder than we want yet the hvac isn't heating; increase internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint + deadband_value;
             ESP_LOGI(
@@ -115,7 +117,7 @@ interval:
               "hvac state of %s and temp_delta of %f, need to trigger heating, so temporarily set the internal setpoint to %f",
               hvac_state.c_str(), temp_delta, temporary_setpoint
             );
-          } else if (temp_delta > deadband_value && hvac_mode == "cool") {
+          } else if (temp_delta >= deadband_value && hvac_mode == "cool") {
             // it is hotter than we want yet the hvac isn't cooling; decrease internal setpoint to trigger heating
             temporary_setpoint = current_internal_setpoint - deadband_value;
             ESP_LOGI(
@@ -192,17 +194,17 @@ sensor:
               - script.execute: 
                   id: update_current_temp_arcs
         - logger.log:
-            format: "t1 emperature changed to %.1f, executing update_setpoints script"
+            format: "t1 emperature changed to %.1f, updating active sensor and setpoints"
             args: x
-            level: DEBUG
+            level: INFO
             tag: "mideaXYE.t1"
+        - component.update: active_temperature_sensor
         - if:
             condition:
               lambda: |-
                 // is now more than min_setpoint_update_ms?
                 return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
             then:
-              - component.update: active_temperature_sensor
               - script.execute:
                   id: update_setpoints
               - component.update: hvac_status
@@ -573,8 +575,8 @@ select:
       
       // final check if the fan is actually on
       if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
-        result = "Error";
+        ESP_LOGW("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Probably the unit just turned off.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
+        result = "Idle";
       }
 
       ESP_LOGD("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
@@ -663,10 +665,13 @@ number:
     set_action:
       - then:
         - lambda: |-
-            ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
-            xyeVars.setTempSend = x;
-            xyeVars.newInput = true;
-            id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
+            // only send a new value if it's different from the old value. Prevents unnecessary sends.
+            if (x != id(internal_set_point).state) {
+              ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
+              xyeVars.setTempSend = x;
+              xyeVars.newInput = true;
+              id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
+            }
   
   # this number defines a custom deadband we can use to override the midea unit's internal deadband
   # by seeing if the temp delta between setpoint and actual is greater than the deadband, we can jiggle the setpoint to force the unit to kick on.
@@ -691,11 +696,11 @@ number:
     entity_category: "config"
     step: 1
     mode: box
-    min_value: 1
-    max_value: 60
+    min_value: 0
+    max_value: 5
     unit_of_measurement: "min"
     device_class: duration
-    initial_value: 3
+    initial_value: 0 # NOTE: make sure this is synced up with min_setpoint_update_ms global
     restore_value: True
     optimistic: True
     set_action:
