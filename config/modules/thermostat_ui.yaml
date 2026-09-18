@@ -72,6 +72,14 @@ globals:
     type: float
     restore_value: yes
     initial_value: $initial_setpoint_value
+  - id: hysteresis_cooling_active
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: hysteresis_heating_active
+    type: bool
+    restore_value: false
+    initial_value: 'false'
 
 select:
   # select to make comparing the fan mode options easier
@@ -145,7 +153,7 @@ script:
           );
           return result;
 - id: update_setpoints
-  mode: restart
+  mode: single
   then:
     - lambda: |-
         // turn on the flag to prevent UI glitches
@@ -159,15 +167,15 @@ script:
         uint8_t internal_setpoint_int;
         // only do setpoint math if both sensors are available
         if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
+          // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
+          // Custom logic to get the controller to get to the desired temperature.
+
           // First, update the active sensor before calculating error
           id(active_temperature_sensor).update();
 
-          // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
-          // Custom logic to get the controller to get to the desired temperature.
-          // calculate the error between the actual temp and the t1 temp
-          float error = id(t1).state - id(active_temperature_sensor).state;
-          ESP_LOGD("thermostat_ui.update_setpoints","t1: %f, actual: %f, error: %f",id(t1).state,id(active_temperature_sensor).state,error);
-
+          float true_temp = id(active_temperature_sensor).state;
+          float t1_temp = id(t1).state;
+          float error = t1_temp - true_temp;
           // add the error to the visible setpoint to get the internal setpoint
           // Ex1: if t1 sees 70 and its actually 75, the error is -5
           // Ex1: if my setpoint is 75, the handler should be off
@@ -180,11 +188,65 @@ script:
           // Ex3: if t1 sees 70 and its actually 75, the error is -5
           // Ex3: my setpoint is 70, the handler should be on
           // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
-          float internal_setpoint = visible_setpoint + error;
-          ESP_LOGD("thermostat_ui.update_setpoints","visible setpoint: %f, new internal setpoint: %f",visible_setpoint,internal_setpoint);
+          float raw = visible_setpoint + error; // ideal internal setpoint
+          std::string hvac_mode = id(opMode).current_option();
+          std::string hvac_status_str = id(hvac_status).current_option();
 
-          // convert to uint8_t for sending to the midea unit
-          internal_setpoint_int = static_cast<uint8_t>(std::round(internal_setpoint)); 
+          // Cool mode ex 1
+          // setpoint is 72, measured temp is 72.6, unit is not cooling
+          // old way would have rounded up to 73, triggering cooling
+          // new way has delta at 0.6, cooling active set to true, setpoint round up to 73
+
+          // Cool mode ex 2
+          // setpoint is 72, measured temp is 72.4, unit is cooling
+          // old way would have rounded down to 72, turning off cooling
+          // new way has delta at 0.4, cooling_active remains true, setpoint gets rounded UP to 73 still
+
+          // Cool mode ex 3
+          // set point is 72, measured temp is 72.0, unit is cooling
+          // delta is 0, cooling active still true, setpoint rounded up to 73
+
+          // cool mode ex 4
+          // set point is 72, measured temp it 71.9, unit is cooling
+          // delta is -0.1, cooling active was true, gets set to false, setpoint rounded up to 72
+
+          // cool mode ex 5
+          // thermostat switches to cool mode from off, setpoint is 72, measured is 72.7
+          // delta is 0.7, cooling active is false, cooling active is switched to true, we round internal setpoint down to 72
+          if (hvac_mode == "cool") {
+            float delta = true_temp - visible_setpoint // how much we have left to cool
+            if (
+              // if we aren't cooling and we are 0.5 degrees or more above the target temp, round setpoint down to trigger cooling
+              (!hysteresis_cooling_active) && (delta >= 0.5)
+            ) { 
+              id(hysteresis_cooling_active) = true; 
+            } else if (
+              // if we are cooling, only round up once we've passed the threshold
+              (hysteresis_cooling_active) && (delta <= -0.1)
+            ) {
+              id(hysteresis_cooling_active) = false;
+            } else if (
+              // if we are not cooling but 
+            )
+            internal_setpoint_int = id(hysteresis_cooling_active) ? (uint8_t)floor(raw) : (uint8_t)ceil(raw);
+          }
+
+          if (hvac_mode == "heat") {
+            float delta = visible_setpoint - true_temp // how much we have left to cool
+            if (
+              // if we aren't heating and we are 0.5 degrees or more below the target temp, round setpoint up to trigger heating
+              (!hysteresis_heating_active) && (delta >= 0.5)
+            ) { 
+              id(hysteresis_heating_active) = true; 
+            } else if (
+              // if we are heating, only round down once we've passed the threshold
+              (hysteresis_heating_active) && (delta <= -0.1)
+            ) {
+              id(hysteresis_heating_active) = false;
+            }
+            internal_setpoint_int = id(hysteresis_heating_active) ? (uint8_t)ceil(raw) : (uint8_t)floor(raw);
+          }
+
           ESP_LOGD("thermostat_ui.update_setpoints","Final adjusted, rounded internal setpoint int: %d",internal_setpoint_int);
         } else {
           // if the sensors/homeassistant are offline, we can at least still use the thermostat this way (though the setpoint will be compared against the t1 sensor on the unit)
@@ -756,8 +818,7 @@ sensor:
     update_interval: never # always driven by manual updates from the other temp sensors
     entity_category: "diagnostic"
     filters:
-      - lambda: return round(x);
-      - delta: 0.5
+      - delta: 0.1
     lambda: |-
       float return_val;
       if (id(temp_source_select).current_option() == "Bedrooms") {
