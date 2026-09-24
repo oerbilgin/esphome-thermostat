@@ -517,6 +517,7 @@ select:
     on_value:
       then:
         - lambda: |-
+            ESP_LOGD("mideaXYE.opMode", "Clearing hysteresis_heating_active and hysteresis_cooling_active");
             // reset the hysteresis globals
             id(hysteresis_heating_active) = false;
             id(hysteresis_cooling_active) = false; 
