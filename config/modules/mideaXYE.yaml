@@ -333,7 +333,7 @@ sensor:
             ESP_LOGD("sensor.opBytes.on_value", "updating opMode select");
             id(opMode).update();
           } else {
-            ESP_LOGD("sensor.opBytes.on_value", "We are in the middle of a change, not updating fanStatus and fanMode.");
+            ESP_LOGD("sensor.opBytes.on_value", "We are in the middle of a change, not updating opMode.");
           }
 
 # sensor to see what the actual internal set temp is
@@ -516,6 +516,11 @@ select:
           }
     on_value:
       then:
+        - lambda: |-
+            ESP_LOGD("mideaXYE.opMode", "Clearing hysteresis_heating_active and hysteresis_cooling_active");
+            // reset the hysteresis globals
+            id(hysteresis_heating_active) = false;
+            id(hysteresis_cooling_active) = false; 
         - script.execute:
             id: update_hvac_mode_ui
             mode: !lambda 'return x;'
