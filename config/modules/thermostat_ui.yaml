@@ -165,6 +165,8 @@ script:
         lv_label_set_text(id(setpoint_number), (to_string((int)visible_setpoint) + "°F").c_str());
 
         uint8_t internal_setpoint_int;
+        std::string hvac_mode = id(opMode).current_option();
+
         // only do setpoint math if both sensors are available
         if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
           // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
@@ -194,7 +196,6 @@ script:
           // Ex3: my setpoint is 70, the handler should be on
           // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
           float raw = visible_setpoint + error; // ideal internal setpoint
-          std::string hvac_mode = id(opMode).current_option();
           float delta;
 
           // Cool mode ex 1
@@ -271,6 +272,23 @@ script:
           internal_setpoint_int = visible_setpoint;
         }
 
+        // in heating mode, the unit applies an offset to t1
+        // based on some testing, this offset appears to be 6 degrees F
+        // Here we adjust for this offset since we are already verifying room temps
+        // This offset adjustment applies even for when we are looking at the t1 sensor
+        // because this offset is intended for mini splits which are up in the ceiling, but
+        // since this is a ducted unit, t1 actually sees return air (mixed)
+
+        if (hvac_mode == "heat") {
+          uint8_t offset = 6;
+          ESP_LOGI(
+            "thermostat_ui.update_setpoints",
+            "Since we are in heating mode, subtracting offset of %d from internal_setpoint_int",
+            offset
+          );
+          internal_setpoint_int -= offset;
+        }
+
         if (id(internal_set_point).state != internal_setpoint_int) {
           // set the number representing the internal setpoint of the midea unit
           // this method triggers the set_action
@@ -298,7 +316,6 @@ script:
         id(setpoint_updating) = false;
 
         // cache the global based on the mode
-        std::string hvac_mode = id(opMode).current_option();
         if (hvac_mode == "heat") {
           ESP_LOGD("thermostat_ui.update_setpoints", "caching heating_setpoint_global as %f", visible_setpoint);
           id(heating_setpoint_global) = visible_setpoint;
