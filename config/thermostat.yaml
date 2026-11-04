@@ -12,6 +12,11 @@ button:
 
 logger:
   level: DEBUG
+  initial_level: INFO
+  logs:
+    thermostat_ui.update_setpoints: DEBUG
+    mideaXYE.opMode: DEBUG
+    mideaXYE.setpoint_freshener: DEBUG
 
 packages:
   hardware_config: !include modules/hardware_config.yaml

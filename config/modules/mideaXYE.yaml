@@ -6,122 +6,17 @@ substitutions:
   sensor_update_interval: 1s
   aux_update_interval: 15s
 
-script:
-# This script temporarily sets the internal setpoint value
-# need to do it in a separate script because the delay step is not blocking this way vs. in cpp
-  - id: jiggle_internal_setpoint
-    mode: single
-    parameters:
-      current_internal_setpoint: float
-      temporary_setpoint: float
+interval:
+# this interval keeps the setpoint fresh; fires off the setpoint updater if it's been long eonugh
+  - id: setpoint_freshener
+    interval: 30s
     then:
-      - number.set:
-          id: internal_set_point
-          value: !lambda 'return temporary_setpoint;'
-      - delay: 30s
+      - logger.log:
+          tag: "mideaXYE.setpoint_freshener"
+          format: "Freshening setpoint..."
+          level: DEBUG
       - script.execute: 
           id: update_setpoints
-          visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
-
-interval:
-# This interval checks the setpoints and current temps and hvac status
-# and jiggles the internal setpoint if needed to lower the midea's deadband
-  - id: setpoint_watcher
-    interval: 60s
-    then:
-      - lambda: |-
-          // immediately stop if the device isn't initialized yet
-          if (!id(device_initialized)) return;
-
-          std::string hvac_mode = id(opMode).current_option();
-          std::string hvac_state = id(hvac_status).current_option();
-          
-          // exit fast if this check is unnecessary
-          if (
-              (hvac_mode == "cool" || hvac_mode == "heat" || hvac_mode == "auto")
-              && (hvac_state == "Idle" || hvac_state == "Diffusing")
-            ) {
-            ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
-              "hvac_mode is %s and hvac_state is %s, checking the setpoint against the deadband...",
-              hvac_mode.c_str(), hvac_state.c_str()
-            );
-          } else {
-            ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
-              "hvac_mode is %s and hvac_state is %s, no need to check the setpoint against the deadband, exiting.",
-              hvac_mode.c_str(), hvac_state.c_str()
-            );
-            return;
-          }
-
-          float visible_setpoint = id(visible_setpoint_value).state;
-          float current_temp = id(active_temperature_sensor).state;
-          float deadband_value = id(deadband).state;
-          uint8_t current_internal_setpoint = id(internal_set_point).state;
-          float temporary_setpoint = 0.0;
-
-          ESP_LOGD(
-            "mideaXYE.setpoint_watcher",
-            "current temp: %f, visible_setpoint: %f, deadband_value: %f",
-            current_temp, visible_setpoint, deadband_value
-            );
-
-          float temp_delta = current_temp - visible_setpoint;
-
-          if (temp_delta < -deadband_value && hvac_mode == "heat") {
-            // it is colder than we want yet the hvac isn't heating; increase internal setpoint to trigger heating
-            temporary_setpoint = current_internal_setpoint + deadband_value;
-            ESP_LOGI(
-              "mideaXYE.setpoint_watcher",
-              "hvac state of %s and temp_delta of %f, need to trigger heating, so temporarily set the internal setpoint to %f",
-              hvac_state.c_str(), temp_delta, temporary_setpoint
-            );
-          } else if (temp_delta > deadband_value && hvac_mode == "cool") {
-            // it is hotter than we want yet the hvac isn't cooling; decrease internal setpoint to trigger heating
-            temporary_setpoint = current_internal_setpoint - deadband_value;
-            ESP_LOGI(
-              "mideaXYE.setpoint_watcher",
-              "hvac state of %s and temp_delta of %f, need to trigger cooling, so temporarily set the internal setpoint to %f",
-              hvac_state.c_str(), temp_delta, temporary_setpoint
-            );
-          } else if (hvac_mode == "auto") {
-              // TODO: implement this
-              ESP_LOGW(
-                "mideaXYE.setpoint_watcher",
-                "Auto mode jiggle not implemented!"
-                );
-          } else {
-            ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
-              "hvac_mode '%s' and temp_delta '%f' are incompatible for a jiggle.",
-              hvac_mode.c_str(), temp_delta
-            );
-            return;
-          }
-
-          ESP_LOGD(
-            "mideaXYE.setpoint_watcher",
-            "temporary_setpoint is %f",
-            temporary_setpoint
-            );
-          if (temporary_setpoint != 0) {
-            // fire off the script to do the jiggle
-            ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
-              "internal_setpoint is %u and t1 temp is %f",
-              current_internal_setpoint, id(t1).state
-            );
-            ESP_LOGI(
-              "mideaXYE.setpoint_watcher",
-              "Jiggling internal setpoint from %u to %f for 30 seconds.",
-              current_internal_setpoint, temporary_setpoint
-            );
-            id(jiggle_internal_setpoint).execute(current_internal_setpoint, temporary_setpoint);
-          } else ESP_LOGD(
-              "mideaXYE.setpoint_watcher",
-              "temporary_setpoint is zero, no need to jiggle."
-            );
 
 sensor:
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
@@ -156,17 +51,15 @@ sensor:
               - script.execute: 
                   id: update_current_temp_arcs
         - logger.log:
-            format: "t1 emperature changed to %.1f, executing update_setpoints script"
+            format: "t1 emperature changed to %.1f, updating active sensor and setpoints"
             args: x
-            level: DEBUG
+            level: INFO
             tag: "mideaXYE.t1"
         - component.update: active_temperature_sensor
         # FIXME: we shouldnt need to do this anymore if followme is working; remove eventually
         # - script.execute:
         #     id: update_setpoints
-        #     visible_setpoint: !lambda 'return id(visible_setpoint_value).state;'
         - component.update: hvac_status
-
 
 # this is the temperature of the refrigerant coming into the air handler from the compressor
 # when it gets hot your compressor is heating, when it gets cold you are cooling.
@@ -290,7 +183,7 @@ sensor:
             ESP_LOGD("sensor.opBytes.on_value", "updating opMode select");
             id(opMode).update();
           } else {
-            ESP_LOGD("sensor.opBytes.on_value", "We are in the middle of a change, not updating fanStatus and fanMode.");
+            ESP_LOGD("sensor.opBytes.on_value", "We are in the middle of a change, not updating opMode.");
           }
 
 # sensor to see what the actual internal set temp is
@@ -475,6 +368,11 @@ select:
           }
     on_value:
       then:
+        - lambda: |-
+            ESP_LOGD("mideaXYE.opMode", "Clearing hysteresis_heating_active and hysteresis_cooling_active");
+            // reset the hysteresis globals
+            id(hysteresis_heating_active) = false;
+            id(hysteresis_cooling_active) = false; 
         - script.execute:
             id: update_hvac_mode_ui
             mode: !lambda 'return x;'
@@ -484,6 +382,7 @@ select:
   # this acts as a sensor (no actions on set_action), but is a select so we can get dropdowns in HASS
   - platform: template
     name: HVAC Status
+    entity_category: "diagnostic"
     update_interval: never # gets updated by any changes to t1, t2a, t3, fanStatus
     id: hvac_status
     options:
@@ -533,8 +432,8 @@ select:
       
       // final check if the fan is actually on
       if ((result == "Heating" || result == "Cooling" || result == "Diffusing") && !fan_is_on) {
-        ESP_LOGE("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Setting hvac_status to err.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
-        result = "Error";
+        ESP_LOGW("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, which means the hvac status should be %s, but the fan is %s which we interpret as OFF! Probably the unit just turned off.", t1_temp, t2a_temp, result.c_str(), fan_status.c_str());
+        result = "Idle";
       }
 
       ESP_LOGD("mideaXYE.hvac_status", "t1_temp is %u, t2_temp is %u, fan_status is %s, hvac_mode is %s, and so the hvac status is %s", t1_temp, t2a_temp, fan_status.c_str(), hvac_mode.c_str(), result.c_str());
@@ -551,6 +450,7 @@ select:
 # its actually a select so that we can treat it as an enum in HASS
   - platform: template
     name: Fan Status
+    entity_category: "diagnostic"
     update_interval: never # gets updated by changes to fanBytes sensor
     id: fanStatus
     options:
@@ -622,27 +522,15 @@ number:
     set_action:
       - then:
         - lambda: |-
-            ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
-            // convert back to celsius prior to sending to the unit
-            xyeVars.setTempSend = std::round((x - 32.0) * 5.0 / 9.0);
-            xyeVars.newInput = true;
-            id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
-  
-  # this number defines a custom deadband we can use to override the midea unit's internal deadband
-  # by seeing if the temp delta between setpoint and actual is greater than the deadband, we can jiggle the setpoint to force the unit to kick on.
-  - platform: template
-    name: Deadband
-    id: deadband
-    entity_category: "config"
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 5
-    unit_of_measurement: "°F" # FIXME: confirm this is the correct unit to use
-    device_class: temperature
-    initial_value: 5 # pretty much guaranteed not to fire; full midea control
-    restore_value: True
-    optimistic: True
+            // only send a new value if it's different from the old value. Prevents unnecessary sends.
+            if (x != id(internal_set_point).state) {
+              ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
+              // convert back to celsius prior to sending to the unit
+              xyeVars.setTempSend = std::round((x - 32.0) * 5.0 / 9.0);
+              xyeVars.newInput = true;
+              id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
+            }
+
 
 
 # FIXME: weird stuff happens when i activate this. do i even need a climate component at all?
