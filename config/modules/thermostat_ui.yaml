@@ -120,7 +120,7 @@ select:
             }
 
         - component.update: active_temperature_sensor
-        # When changing the temp source, force a setpoint update regardless of cooldown timer
+        # When changing the temp source, force a setpoint update
         - script.execute:
             id: update_setpoints
 script:
@@ -300,10 +300,6 @@ script:
           auto call = id(internal_set_point).make_call();
           call.set_value(internal_setpoint_int);
           call.perform();
-
-          // record that we updated the setpoint right now
-          // this is used to guard setting the setpoint too frequently via automation
-          id(last_setpoint_update_ms) = millis();
         } else {
           ESP_LOGD(
           "thermostat_ui.update_setpoints",
@@ -893,27 +889,8 @@ sensor:
               );
         - script.execute: 
             id: update_current_temp_arcs
-        - if:
-            condition:
-              # TODO: make this a common function to reuse
-              lambda: |-
-                // if this update is called by setpoint update, dont call setpoint update again
-                bool is_setpoint_updating = id(setpoint_updating);
-                // dont update setpoints too frequently (avoid short cycling)
-                // NOTE: this conditional may not actually be necessary
-                bool is_in_setpoint_cooldown = (millis() - id(last_setpoint_update_ms)) < id(min_setpoint_update_ms);
-                return !is_setpoint_updating && !is_in_setpoint_cooldown;
-            then:
-              - script.execute:
-                  id: update_setpoints
-                  
-            else:
-              - lambda: |-
-                  ESP_LOGI(
-                    "thermostat_ui.active_temperature_sensor",
-                    "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
-                    id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
-                    );
+        - script.execute:
+            id: update_setpoints
   
   # next rain probability
   - platform: homeassistant
