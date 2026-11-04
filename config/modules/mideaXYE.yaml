@@ -6,31 +6,17 @@ substitutions:
   sensor_update_interval: 1s
   aux_update_interval: 15s
 
-globals:
-  - id: min_setpoint_update_ms
-    type: unsigned long
-    initial_value: '0' # NOTE: make sure this is synced up with min_setpoint_update_ms global
-  - id: last_setpoint_update_ms
-    type: unsigned long
-    initial_value: '0'
-
 interval:
 # this interval keeps the setpoint fresh; fires off the setpoint updater if it's been long eonugh
   - id: setpoint_freshener
     interval: 30s
     then:
-      - if:
-          condition:
-            lambda: |-
-              // is now more than min_setpoint_update_ms?
-              return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
-          then:
-            - logger.log:
-                tag: "mideaXYE.setpoint_freshener"
-                format: "Freshening setpoint..."
-                level: DEBUG
-            - script.execute: 
-                id: update_setpoints
+      - logger.log:
+          tag: "mideaXYE.setpoint_freshener"
+          format: "Freshening setpoint..."
+          level: DEBUG
+      - script.execute: 
+          id: update_setpoints
 
 sensor:
 # This sensor updates once a second and just checks the Serial() buffer for anything to read
@@ -68,23 +54,9 @@ sensor:
             level: INFO
             tag: "mideaXYE.t1"
         - component.update: active_temperature_sensor
-        - if:
-            condition:
-              lambda: |-
-                // is now more than min_setpoint_update_ms?
-                return (millis() - id(last_setpoint_update_ms)) >= id(min_setpoint_update_ms);
-            then:
-              - script.execute:
-                  id: update_setpoints
-              - component.update: hvac_status
-            else:
-              - lambda: |-
-                  ESP_LOGI(
-                    "mideaXYE.t1",
-                    "The setpoint was last updated at %lu ms, but it's only been %lu, not %lu",
-                    id(last_setpoint_update_ms), millis() - id(last_setpoint_update_ms), id(min_setpoint_update_ms)
-                    );
-
+        - script.execute:
+            id: update_setpoints
+        - component.update: hvac_status
 
 # this is the temperature of the refrigerant coming into the air handler from the compressor
 # when it gets hot your compressor is heating, when it gets cold you are cooling.
@@ -546,26 +518,6 @@ number:
               xyeVars.newInput = true;
               id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
             }
-  
-  # this number sets the setpoint cooldown in ms
-  - platform: template
-    name: Setpoint Cooldown Time
-    id: setpoint_cooldown_minutes
-    entity_category: "config"
-    step: 1
-    mode: box
-    min_value: 0
-    max_value: 5
-    unit_of_measurement: "min"
-    device_class: duration
-    initial_value: 0 # NOTE: make sure this is synced up with min_setpoint_update_ms global
-    restore_value: True
-    optimistic: True
-    set_action:
-      lambda: |-
-        unsigned long val = static_cast<unsigned long>(x);
-        unsigned long ms = val * 60UL * 1000UL;
-        id(min_setpoint_update_ms) = ms;
 
 
 # FIXME: weird stuff happens when i activate this. do i even need a climate component at all?
