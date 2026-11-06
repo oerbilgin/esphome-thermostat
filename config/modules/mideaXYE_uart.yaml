@@ -89,7 +89,7 @@ script:
 
             // add the followme temp
             // Note this MUST be in celsius and MUST be whole integers
-            xyeVars.sendData[11] = xyeVars.followMeSend;
+            xyeVars.sendData[11] = *xyeVars.followMeSend;
             xyeVars.followMeSend.reset(); // clear the send data
           } else {
             ESP_LOGW(

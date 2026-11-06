@@ -172,119 +172,17 @@ script:
         uint8_t internal_setpoint_int;
         std::string hvac_mode = id(opMode).current_option();
 
-        // only do setpoint math if both sensors are available
-        // FIXME: turning this logic block off for now, need to have it switched or something eventually
-        // if (!std::isnan(id(t1).state) && !std::isnan(id(active_temperature_sensor).state)) {
-        if (false) {
-          // NOTE: This is one directional; if someone changes the internal setpoint on the machine, things will get wonky
-          // Custom logic to get the controller to get to the desired temperature.
-
-          // First, update the active sensor before calculating error
-          id(active_temperature_sensor).update();
-
-          float true_temp = id(active_temperature_sensor).state;
-          float t1_temp = id(t1).state;
-          float error = t1_temp - true_temp;
-          ESP_LOGD(
-            "thermostat_ui.update_setpoints",
-            "active_temp_sensor is %f, t1_temp is %f, so error is %f",
-            true_temp, t1_temp, error
-          );
-          // add the error to the visible setpoint to get the internal setpoint
-          // Ex1: if t1 sees 70 and its actually 75, the error is -5
-          // Ex1: if my setpoint is 75, the handler should be off
-          // Ex1: internal setpoint = 75 + -5 = 70, so the handler will not turn on
-
-          // Ex2: if t1 sees 80 and its actually 75, the error is +5
-          // Ex2: if my setpoint is 80, the handler should be on
-          // Ex2: internal setpoint = 80 + 5 = 85, so the handler will turn on to heat
-
-          // Ex3: if t1 sees 70 and its actually 75, the error is -5
-          // Ex3: my setpoint is 70, the handler should be on
-          // Ex3: internal setpoint = 70 + -5 = 65, so the handler will turn on to cool 5 degrees
-          float raw = visible_setpoint + error; // ideal internal setpoint
-          float delta;
-
-          // Cool mode ex 1
-          // setpoint is 72, measured temp is 72.6, unit is not cooling
-          // old way would have rounded up to 73, triggering cooling
-          // new way has delta at 0.6, cooling active set to true, setpoint round up to 73
-
-          // Cool mode ex 2
-          // setpoint is 72, measured temp is 72.4, unit is cooling
-          // old way would have rounded down to 72, turning off cooling
-          // new way has delta at 0.4, cooling_active remains true, setpoint gets rounded UP to 73 still
-
-          // Cool mode ex 3
-          // set point is 72, measured temp is 72.0, unit is cooling
-          // delta is 0, cooling active still true, setpoint rounded up to 73
-
-          // cool mode ex 4
-          // set point is 72, measured temp it 71.9, unit is cooling
-          // delta is -0.1, cooling active was true, gets set to false, setpoint rounded up to 72
-
-          // cool mode ex 5
-          // thermostat switches to cool mode from off, setpoint is 72, measured is 72.7
-          // delta is 0.7, cooling active is false, cooling active is switched to true, we round internal setpoint down to 72
-          ESP_LOGD(
-            "thermostat_ui.update_setpoints",
-            "Before hysteresis calcs, hvac_mode is %s, true_temp is %f, visible_setpoint is %f, hysteresis_cooling_active is %s, hysteresis_heating_active is %s",
-            hvac_mode.c_str(), true_temp, visible_setpoint, id(hysteresis_cooling_active) ? "True" : "False", id(hysteresis_heating_active) ? "True" : "False"
-          );
-          
-          if (hvac_mode == "cool") {
-            delta = true_temp - visible_setpoint; // how much we have left to cool
-            if (
-              // if we aren't cooling and we are 0.5 degrees or more above the target temp, round setpoint down to trigger cooling
-              (!id(hysteresis_cooling_active)) && (delta >= 0.5)
-            ) { 
-              id(hysteresis_cooling_active) = true; 
-            } else if (
-              // if we are cooling, only round up once we've passed the threshold
-              (id(hysteresis_cooling_active)) && (delta <= -0.1)
-            ) {
-              id(hysteresis_cooling_active) = false;
-            } 
-            internal_setpoint_int = id(hysteresis_cooling_active) ? (uint8_t)floor(raw) : (uint8_t)ceil(raw);
-          }
-
-          if (hvac_mode == "heat") {
-            delta = visible_setpoint - true_temp; // how much we have left to cool
-            if (
-              // if we aren't heating and we are 0.5 degrees or more below the target temp, round setpoint up to trigger heating
-              (!id(hysteresis_heating_active)) && (delta >= 0.5)
-            ) { 
-              id(hysteresis_heating_active) = true; 
-            } else if (
-              // if we are heating, only round down once we've passed the threshold
-              (id(hysteresis_heating_active)) && (delta <= -0.1)
-            ) {
-              id(hysteresis_heating_active) = false;
-            }
-            internal_setpoint_int = id(hysteresis_heating_active) ? (uint8_t)ceil(raw) : (uint8_t)floor(raw);
-          }
-
-          ESP_LOGD(
-            "thermostat_ui.update_setpoints",
-            "After hysteresis calcs: hysteresis_cooling_active is %s, hysteresis_heating_active is %s, delta from setpoint is %f, ideal internal setpoint is %f, final internal_setpoint_int is %d",
-            id(hysteresis_cooling_active) ? "True" : "False", id(hysteresis_heating_active) ? "True" : "False", delta, raw, internal_setpoint_int
-          );
-
-        } else {
-          // if the sensors/homeassistant are offline, we can at least still use the thermostat this way (though the setpoint will be compared against the t1 sensor on the unit)
-          // TODO: eventually use an onboard sensor for this possiblity.
-          ESP_LOGW("thermostat_ui.update_setpoints",
-            "At least one of temperature sensors 't1' and 'active_temperature_sensor' were offline, setting internal setpoint to the visible setpoint for now."
-          );
-          internal_setpoint_int = visible_setpoint;
-        }
-
         // Calculate the celsius setpoint
-        float true_setpoint_c = (visible_setpoint - 32) * (5.0 / 9.0);
+        float true_setpoint_c = (visible_setpoint - 32.0) * (5.0 / 9.0);
         // Calculate the rounded celsius setpoint
-        internal_setpoint_int = std::round(true_setpoint_c);
+        internal_setpoint_int = static_cast<uint8_t>(std::round(true_setpoint_c));
         // Calculate the setpoint bias and store as global
         id(setpoint_bias) = internal_setpoint_int - true_setpoint_c;
+        ESP_LOGD(
+          "thermostat_ui.update_setpoints",
+          "Visible setpoint: %f, true celsius conversion: %f, rounded: %u, setpoint bias set to %f",
+          visible_setpoint, true_setpoint_c, internal_setpoint_int, id(setpoint_bias)
+        );
 
         // send the new setpoint
         if (id(internal_set_point).state != internal_setpoint_int) {
@@ -897,7 +795,7 @@ sensor:
             float room_temp_c = (x - 32.0) * (5.0 / 9.0);
             ESP_LOGD(
               "thermostat_ui.active_temperature_sensor",
-              "%f degF --> %fdegC",
+              "%f degF --> %f degC",
               x, room_temp_c
             );
             // apply the setpoint bias
@@ -905,13 +803,13 @@ sensor:
             ESP_LOGD(
               "thermostat_ui.active_temperature_sensor",
               "+ bias %f = %f",
-              room_temp_c, id(setpoint_bias)
+              id(setpoint_bias), room_temp_c
             );
             // round to nearest whole integer
             uint8_t room_temp_c_int = std::round(room_temp_c);
             ESP_LOGD(
               "thermostat_ui.active_temperature_sensor",
-              "Rounded to %i",
+              "Rounded to %i, sending that as followme",
               room_temp_c_int
             );
             

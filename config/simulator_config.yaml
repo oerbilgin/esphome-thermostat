@@ -14,7 +14,7 @@ logger:
     # script: VERBOSE
     touchscreen: DEBUG
     api.service: DEBUG
-    climate: VERY_VERBOSE
+    climate: INFO
 
 
 packages:
