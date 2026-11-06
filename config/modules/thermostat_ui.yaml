@@ -215,6 +215,8 @@ script:
         } else {
           ESP_LOGD("thermostat_ui.update_setpoints", "hvac_mode is %s, so no need to cache anything.", hvac_mode.c_str());
         }
+    # update the temp sensor to trigger a follow-me sending
+    - component.update: active_temperature_sensor
 
 - id: update_temp_icon
   mode: restart

@@ -131,7 +131,11 @@ script:
             std::memcpy(xyeVars.waitSendData, xyeVars.sendData, 16);
             xyeVars.waitingToSend = true;
           }
-          xyeVars.newInput = false;
+          xyeVars.newInput =
+            xyeVars.opBytesSend.has_value() ||
+            xyeVars.fanBytesSend.has_value() ||
+            xyeVars.setTempSend.has_value() ||
+            xyeVars.followMeSend.has_value();
           xyeVars.sendTimeCount = 0;
         }
   - id: updater_script
