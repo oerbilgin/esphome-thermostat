@@ -125,9 +125,7 @@ select:
             }
 
         - component.update: active_temperature_sensor
-        # When changing the temp source, force a setpoint update
-        - script.execute:
-            id: update_setpoints
+
 script:
 - id: update_current_temp_arcs
   mode: restart
@@ -786,9 +784,6 @@ sensor:
               );
         - script.execute: 
             id: update_current_temp_arcs
-        # FIXME: dont need to call it here at all if using follow me; remove eventually
-        # - script.execute:
-        #     id: update_setpoints
         # send a followme packet
         - lambda: |-
             // convert F -> C
