@@ -192,10 +192,9 @@ sensor:
     name: Internal Setpoint
     update_interval: 1s
     device_class: temperature
-    unit_of_measurement: "°F"
+    unit_of_measurement: "°C"
     filters:
       - delta: 0.5
-      - lambda: return x * 9.0 / 5.0 + 32.0; // convert  C -> F
     # use setTemp instead of recData because it is set after we dump the stale data after sending
     lambda: |-
       // only update the value if we aren't waiting to send any commands
@@ -517,7 +516,7 @@ number:
     mode: box
     min_value: 0
     max_value: 100
-    unit_of_measurement: "°F"
+    unit_of_measurement: "°C"
     device_class: temperature
     set_action:
       - then:
@@ -525,8 +524,7 @@ number:
             // only send a new value if it's different from the old value. Prevents unnecessary sends.
             if (x != id(internal_set_point).state) {
               ESP_LOGD("mideaXYE.internal_set_point", "internal_set_point changed to %f, sending command to change setTemp", x);
-              // convert back to celsius prior to sending to the unit
-              xyeVars.setTempSend = std::round((x - 32.0) * 5.0 / 9.0);
+              xyeVars.setTempSend = std::round(x);
               xyeVars.newInput = true;
               id(internal_set_point).publish_state(x); // be optimistic here since the true value will eventually publish
             }

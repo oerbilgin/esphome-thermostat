@@ -18,7 +18,6 @@ number:
           // set a new followme temp
           xyeVars.followMeSend = x;
           xyeVars.newInput = true;  
-number:
   - platform: template
     name: "Send Op byte"
     id: send_mode_debug

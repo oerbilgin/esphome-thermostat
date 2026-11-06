@@ -88,9 +88,8 @@ script:
             xyeVars.sendData[10] = 0x42; // NOTE: this could be 0x44 and 0x46 also. 0x46 does not switch to F. maybe it allows half-step?
 
             // add the followme temp
-            // FIXME: integer celsius is too coarse, consider smarter rounding if close to half, or maybe 0x46 allows this?
-            uint8_t followMeC = static_cast<uint8_t>(std::round(((xyeVars.followMeSend.value() - 32.0) * 5.0 / 9.0)));
-            xyeVars.sendData[11] = followMeC;
+            // Note this MUST be in celsius and MUST be whole integers
+            xyeVars.sendData[11] = xyeVars.followMeSend;
             xyeVars.followMeSend.reset(); // clear the send data
           } else {
             ESP_LOGW(
@@ -99,7 +98,7 @@ script:
             );
             return;
           }
-
+ 
           uint8_t i=0;
           uint32_t crc=0;
           int len=16;
@@ -258,7 +257,7 @@ script:
               id(opBytes).publish_state(xyeVars.opBytes); // TODO: do we even need xyeVars.opBytes at this point?
 
               xyeVars.setTemp = xyeVars.recData[REC_TEMP];
-              id(internal_set_point).publish_state(xyeVars.setTemp * 9.0 / 5.0 + 32.0); // convert to fahrenheit
+              id(internal_set_point).publish_state(xyeVars.setTemp);
 
               ESP_LOGD("mideaXYE_UART.updater","Got these updated values: op 0x%02X fan 0x%02X setpoint 0x%02X",xyeVars.opBytes,xyeVars.fanBytes,xyeVars.setTemp);
               

@@ -81,6 +81,10 @@ globals:
     type: bool
     restore_value: false
     initial_value: 'false'
+  - id: setpoint_bias
+    type: float
+    restore_value: true
+    initial_value: '0'
 
 select:
   # select to make comparing the fan mode options easier
@@ -275,23 +279,14 @@ script:
           internal_setpoint_int = visible_setpoint;
         }
 
-        // in heating mode, the unit applies an offset to t1
-        // based on some testing, this offset appears to be 6 degrees F
-        // Here we adjust for this offset since we are already verifying room temps
-        // This offset adjustment applies even for when we are looking at the t1 sensor
-        // because this offset is intended for mini splits which are up in the ceiling, but
-        // since this is a ducted unit, t1 actually sees return air (mixed)
+        // Calculate the celsius setpoint
+        float true_setpoint_c = (visible_setpoint - 32) * (5.0 / 9.0);
+        // Calculate the rounded celsius setpoint
+        internal_setpoint_int = std::round(true_setpoint_c);
+        // Calculate the setpoint bias and store as global
+        id(setpoint_bias) = internal_setpoint_int - true_setpoint_c;
 
-        if (hvac_mode == "heat") {
-          uint8_t offset = 6;
-          ESP_LOGI(
-            "thermostat_ui.update_setpoints",
-            "Since we are in heating mode, subtracting offset of %d from internal_setpoint_int",
-            offset
-          );
-          internal_setpoint_int -= offset;
-        }
-
+        // send the new setpoint
         if (id(internal_set_point).state != internal_setpoint_int) {
           // set the number representing the internal setpoint of the midea unit
           // this method triggers the set_action
@@ -896,13 +891,33 @@ sensor:
         # FIXME: dont need to call it here at all if using follow me; remove eventually
         # - script.execute:
         #     id: update_setpoints
-        # FIXME: uncomment this when done debugging!
-        # - lambda: |-
-        #     if (id(temp_source_select).current_option() != "Air Handler") {
-        #       // set a new followme temp, only if the temp source isn't the air handler
-        #       xyeVars.followMeSend = x;
-        #       xyeVars.newInput = true;
-        #     }
+        # send a followme packet
+        - lambda: |-
+            // convert F -> C
+            float room_temp_c = (x - 32.0) * (5.0 / 9.0);
+            ESP_LOGD(
+              "thermostat_ui.active_temperature_sensor",
+              "%f degF --> %fdegC",
+              x, room_temp_c
+            );
+            // apply the setpoint bias
+            room_temp_c = room_temp_c + id(setpoint_bias);
+            ESP_LOGD(
+              "thermostat_ui.active_temperature_sensor",
+              "+ bias %f = %f",
+              room_temp_c, id(setpoint_bias)
+            );
+            // round to nearest whole integer
+            uint8_t room_temp_c_int = std::round(room_temp_c);
+            ESP_LOGD(
+              "thermostat_ui.active_temperature_sensor",
+              "Rounded to %i",
+              room_temp_c_int
+            );
+            
+            // Send as a follow me packet
+            xyeVars.followMeSend = room_temp_c_int;
+            xyeVars.newInput = true;
   
   # next rain probability
   - platform: homeassistant
