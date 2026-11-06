@@ -73,9 +73,9 @@ script:
             ESP_LOGD(
               "mideaXYE_UART.send_command",
               "Sending op: 0x%02X, fan: 0x%02X, setTemp: 0x%02X",
-              static_cast<unsigned int>(*xyeVars.opBytesSend),
-              static_cast<unsigned int>(*xyeVars.fanBytesSend),
-              static_cast<unsigned int>(*xyeVars.setTempSend)
+              static_cast<unsigned int>(xyeVars.sendData[SEND_MODE]),
+              static_cast<unsigned int>(xyeVars.sendData[SEND_FAN]),
+              static_cast<unsigned int>(xyeVars.sendData[SEND_TEMP])
               );
           } else if (xyeVars.followMeSend.has_value()) {
             ESP_LOGI("mideaXYE_UART.send_command", "New follow-me value to send: 0x%02X", static_cast<unsigned int>(*xyeVars.followMeSend));
