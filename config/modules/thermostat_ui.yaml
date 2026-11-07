@@ -90,7 +90,9 @@ interval:
   - id: freshen_follow_me
     interval: 120s
     then:
-      - script.execute: send_follow_me_packet
+      - script.execute: 
+          id: send_follow_me_packet
+          room_temp: !lambda 'return id(active_temperature_sensor).state;'
 
 select:
   # select to make comparing the fan mode options easier
@@ -222,7 +224,9 @@ script:
           ESP_LOGD("thermostat_ui.update_setpoints", "hvac_mode is %s, so no need to cache anything.", hvac_mode.c_str());
         }
     # send a followme to update
-    - script.execute: send_follow_me_packet
+    - script.execute: 
+        id: send_follow_me_packet
+        room_temp: !lambda 'return id(active_temperature_sensor).state;'
 
 - id: send_follow_me_packet
   mode: restart
@@ -826,6 +830,7 @@ sensor:
             id: update_current_temp_arcs
         - script.execute:
             id: send_follow_me_packet
+            room_temp: !lambda 'return id(active_temperature_sensor).state;'
   
   # next rain probability
   - platform: homeassistant
