@@ -86,6 +86,12 @@ globals:
     restore_value: true
     initial_value: '0'
 
+interval:
+  - id: freshen_follow_me
+    interval: 120s
+    then:
+      - script.execute: send_follow_me_packet
+
 select:
   # select to make comparing the fan mode options easier
   - platform: lvgl 
@@ -215,8 +221,40 @@ script:
         } else {
           ESP_LOGD("thermostat_ui.update_setpoints", "hvac_mode is %s, so no need to cache anything.", hvac_mode.c_str());
         }
-    # update the temp sensor to trigger a follow-me sending
-    - component.update: active_temperature_sensor
+    # send a followme to update
+    - script.execute: send_follow_me_packet
+
+- id: send_follow_me_packet
+  mode: restart
+  parameters:
+    room_temp: float
+  then:
+    - lambda: |-
+        // convert F -> C
+        float room_temp_c = (room_temp - 32.0) * (5.0 / 9.0);
+        ESP_LOGD(
+          "thermostat_ui.send_follow_me_packet",
+          "%f degF --> %f degC",
+          room_temp, room_temp_c
+        );
+        // apply the setpoint bias
+        room_temp_c = room_temp_c + id(setpoint_bias);
+        ESP_LOGD(
+          "thermostat_ui.send_follow_me_packet",
+          "+ bias %f = %f",
+          id(setpoint_bias), room_temp_c
+        );
+        // round to nearest whole integer
+        uint8_t room_temp_c_int = std::round(room_temp_c);
+        ESP_LOGD(
+          "thermostat_ui.send_follow_me_packet",
+          "Rounded to %i, sending that as followme",
+          room_temp_c_int
+        );
+        
+        // Send as a follow me packet
+        xyeVars.followMeSend = room_temp_c_int;
+        xyeVars.newInput = true;
 
 - id: update_temp_icon
   mode: restart
@@ -738,7 +776,7 @@ sensor:
     id: active_temperature_sensor
     device_class: temperature
     unit_of_measurement: "°F"
-    update_interval: 180s # update every 3 minutes to ensure that a follow-me packet gets sent # FIXME: verify this!
+    update_interval: 300s # mostly gets updated upstream, but let's just keep it fresh
     entity_category: "diagnostic"
     filters:
       - delta: 0.1
@@ -786,33 +824,8 @@ sensor:
               );
         - script.execute: 
             id: update_current_temp_arcs
-        # send a followme packet
-        - lambda: |-
-            // convert F -> C
-            float room_temp_c = (x - 32.0) * (5.0 / 9.0);
-            ESP_LOGD(
-              "thermostat_ui.active_temperature_sensor",
-              "%f degF --> %f degC",
-              x, room_temp_c
-            );
-            // apply the setpoint bias
-            room_temp_c = room_temp_c + id(setpoint_bias);
-            ESP_LOGD(
-              "thermostat_ui.active_temperature_sensor",
-              "+ bias %f = %f",
-              id(setpoint_bias), room_temp_c
-            );
-            // round to nearest whole integer
-            uint8_t room_temp_c_int = std::round(room_temp_c);
-            ESP_LOGD(
-              "thermostat_ui.active_temperature_sensor",
-              "Rounded to %i, sending that as followme",
-              room_temp_c_int
-            );
-            
-            // Send as a follow me packet
-            xyeVars.followMeSend = room_temp_c_int;
-            xyeVars.newInput = true;
+        - script.execute:
+            id: send_follow_me_packet
   
   # next rain probability
   - platform: homeassistant
